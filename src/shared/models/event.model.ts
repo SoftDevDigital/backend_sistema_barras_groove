@@ -25,29 +25,30 @@ export class EventModel extends BaseModel implements IEvent {
 
   toDynamoDBItem(): Record<string, any> {
     return {
-      PK: { S: `EVENT#${this.id}` },
-      SK: { S: `EVENT#${this.id}` },
-      GSI1PK: { S: `EVENT#${this.status}` },
-      GSI1SK: { S: this.startDate },
-      ...super.toDynamoDBItem(),
-      name: { S: this.name },
-      startDate: { S: this.startDate },
-      endDate: { S: this.endDate },
-      status: { S: this.status },
+      PK: `EVENT#${this.id}`,
+      SK: `EVENT#${this.id}`,
+      GSI1PK: `EVENT#${this.status}`,
+      GSI1SK: this.startDate,
+      id: this.id,
+      name: this.name,
+      startDate: this.startDate,
+      endDate: this.endDate,
+      status: this.status,
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
     };
   }
 
   static fromDynamoDBItem(item: Record<string, any>): EventModel {
     const event = new EventModel();
-    const data = BaseModel.fromDynamoDBItem(item);
     
-    event.id = data.id;
-    event.name = data.name;
-    event.startDate = data.startDate;
-    event.endDate = data.endDate;
-    event.status = data.status;
-    event.createdAt = data.createdAt;
-    event.updatedAt = data.updatedAt;
+    event.id = item.id;
+    event.name = item.name;
+    event.startDate = item.startDate;
+    event.endDate = item.endDate;
+    event.status = item.status;
+    event.createdAt = item.createdAt;
+    event.updatedAt = item.updatedAt;
     
     return event;
   }

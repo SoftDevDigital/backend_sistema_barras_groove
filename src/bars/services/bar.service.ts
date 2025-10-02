@@ -10,6 +10,9 @@ export class BarService {
   constructor(private readonly dynamoDBService: DynamoDBService) {}
 
   async create(createBarDto: CreateBarDto): Promise<IBar> {
+    // Verificar que el evento existe
+    await this.validateEventExists(createBarDto.eventId);
+
     // Verificar si ya existe un bar con el mismo nombre en el mismo evento
     const existingBar = await this.findByNameAndEvent(createBarDto.name, createBarDto.eventId);
     if (existingBar) {
@@ -239,6 +242,24 @@ export class BarService {
 
   async changeStatus(id: string, status: 'active' | 'closed'): Promise<IBar> {
     return this.update(id, { status });
+  }
+
+  private async validateEventExists(eventId: string): Promise<void> {
+    try {
+      const event = await this.dynamoDBService.get(TABLE_NAMES.EVENTS, {
+        PK: `EVENT#${eventId}`,
+        SK: `EVENT#${eventId}`,
+      });
+
+      if (!event) {
+        throw new BadRequestException(`Event with ID '${eventId}' does not exist. Please create the event first or use a valid event ID.`);
+      }
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      throw new BadRequestException(`Event with ID '${eventId}' does not exist. Please create the event first or use a valid event ID.`);
+    }
   }
 
   private async findByNameAndEvent(name: string, eventId: string): Promise<IBar | null> {
