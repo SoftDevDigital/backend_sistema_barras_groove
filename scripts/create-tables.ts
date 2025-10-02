@@ -1,0 +1,155 @@
+import { DynamoDBClient, CreateTableCommand, DescribeTableCommand } from '@aws-sdk/client-dynamodb';
+import { TABLE_NAMES } from '../src/shared/config/dynamodb.config';
+
+const client = new DynamoDBClient({
+  region: 'us-east-1',
+  // Usa las credenciales del AWS CLI por defecto
+});
+
+const tables = [
+  {
+    TableName: TABLE_NAMES.USERS,
+    KeySchema: [
+      { AttributeName: 'PK', KeyType: 'HASH' },
+      { AttributeName: 'SK', KeyType: 'RANGE' },
+    ],
+    AttributeDefinitions: [
+      { AttributeName: 'PK', AttributeType: 'S' },
+      { AttributeName: 'SK', AttributeType: 'S' },
+    ],
+    BillingMode: 'PAY_PER_REQUEST',
+  },
+  {
+    TableName: TABLE_NAMES.EVENTS,
+    KeySchema: [
+      { AttributeName: 'PK', KeyType: 'HASH' },
+      { AttributeName: 'SK', KeyType: 'RANGE' },
+    ],
+    AttributeDefinitions: [
+      { AttributeName: 'PK', AttributeType: 'S' },
+      { AttributeName: 'SK', AttributeType: 'S' },
+    ],
+    BillingMode: 'PAY_PER_REQUEST',
+  },
+  {
+    TableName: TABLE_NAMES.BARS,
+    KeySchema: [
+      { AttributeName: 'PK', KeyType: 'HASH' },
+      { AttributeName: 'SK', KeyType: 'RANGE' },
+    ],
+    AttributeDefinitions: [
+      { AttributeName: 'PK', AttributeType: 'S' },
+      { AttributeName: 'SK', AttributeType: 'S' },
+    ],
+    BillingMode: 'PAY_PER_REQUEST',
+  },
+  {
+    TableName: TABLE_NAMES.PRODUCTS,
+    KeySchema: [
+      { AttributeName: 'PK', KeyType: 'HASH' },
+      { AttributeName: 'SK', KeyType: 'RANGE' },
+    ],
+    AttributeDefinitions: [
+      { AttributeName: 'PK', AttributeType: 'S' },
+      { AttributeName: 'SK', AttributeType: 'S' },
+    ],
+    BillingMode: 'PAY_PER_REQUEST',
+  },
+  {
+    TableName: TABLE_NAMES.EMPLOYEES,
+    KeySchema: [
+      { AttributeName: 'PK', KeyType: 'HASH' },
+      { AttributeName: 'SK', KeyType: 'RANGE' },
+    ],
+    AttributeDefinitions: [
+      { AttributeName: 'PK', AttributeType: 'S' },
+      { AttributeName: 'SK', AttributeType: 'S' },
+    ],
+    BillingMode: 'PAY_PER_REQUEST',
+  },
+  {
+    TableName: TABLE_NAMES.EMPLOYEE_ASSIGNMENTS,
+    KeySchema: [
+      { AttributeName: 'PK', KeyType: 'HASH' },
+      { AttributeName: 'SK', KeyType: 'RANGE' },
+    ],
+    AttributeDefinitions: [
+      { AttributeName: 'PK', AttributeType: 'S' },
+      { AttributeName: 'SK', AttributeType: 'S' },
+    ],
+    BillingMode: 'PAY_PER_REQUEST',
+  },
+  {
+    TableName: TABLE_NAMES.TICKETS,
+    KeySchema: [
+      { AttributeName: 'PK', KeyType: 'HASH' },
+      { AttributeName: 'SK', KeyType: 'RANGE' },
+    ],
+    AttributeDefinitions: [
+      { AttributeName: 'PK', AttributeType: 'S' },
+      { AttributeName: 'SK', AttributeType: 'S' },
+    ],
+    BillingMode: 'PAY_PER_REQUEST',
+  },
+  {
+    TableName: TABLE_NAMES.EXPENSES,
+    KeySchema: [
+      { AttributeName: 'PK', KeyType: 'HASH' },
+      { AttributeName: 'SK', KeyType: 'RANGE' },
+    ],
+    AttributeDefinitions: [
+      { AttributeName: 'PK', AttributeType: 'S' },
+      { AttributeName: 'SK', AttributeType: 'S' },
+    ],
+    BillingMode: 'PAY_PER_REQUEST',
+  },
+  {
+    TableName: TABLE_NAMES.STOCK,
+    KeySchema: [
+      { AttributeName: 'PK', KeyType: 'HASH' },
+      { AttributeName: 'SK', KeyType: 'RANGE' },
+    ],
+    AttributeDefinitions: [
+      { AttributeName: 'PK', AttributeType: 'S' },
+      { AttributeName: 'SK', AttributeType: 'S' },
+    ],
+    BillingMode: 'PAY_PER_REQUEST',
+  },
+];
+
+async function createTable(tableConfig: any) {
+  try {
+    // Verificar si la tabla ya existe
+    await client.send(new DescribeTableCommand({ TableName: tableConfig.TableName }));
+    console.log(`✅ Tabla ${tableConfig.TableName} ya existe`);
+    return;
+  } catch (error: any) {
+    if (error.name !== 'ResourceNotFoundException') {
+      throw error;
+    }
+  }
+
+  try {
+    await client.send(new CreateTableCommand(tableConfig));
+    console.log(`✅ Tabla ${tableConfig.TableName} creada exitosamente`);
+  } catch (error: any) {
+    console.error(`❌ Error creando tabla ${tableConfig.TableName}:`, error.message);
+  }
+}
+
+async function createAllTables() {
+  console.log('🚀 Creando tablas en DynamoDB...');
+  
+  for (const table of tables) {
+    await createTable(table);
+  }
+  
+  console.log('✨ Proceso completado');
+}
+
+// Ejecutar si es llamado directamente
+if (require.main === module) {
+  createAllTables().catch(console.error);
+}
+
+export { createAllTables };
