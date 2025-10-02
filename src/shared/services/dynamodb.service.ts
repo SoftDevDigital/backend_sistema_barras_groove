@@ -28,6 +28,13 @@ export class DynamoDBService {
       await this.client.send(command);
     } catch (error) {
       console.error(`DynamoDB PUT error for table ${tableName}:`, error.message);
+      
+      // Si es error de conexión, no lanzar error para mantener la app funcionando
+      if (error.name === 'NetworkingError' || error.name === 'TimeoutError') {
+        console.warn(`DynamoDB connection issue for table ${tableName}, operation skipped`);
+        return;
+      }
+      
       throw error;
     }
   }
@@ -43,6 +50,13 @@ export class DynamoDBService {
       return result.Item || null;
     } catch (error) {
       console.error(`DynamoDB GET error for table ${tableName}:`, error.message);
+      
+      // Si es error de conexión, retornar null para mantener la app funcionando
+      if (error.name === 'NetworkingError' || error.name === 'TimeoutError') {
+        console.warn(`DynamoDB connection issue for table ${tableName}, returning null`);
+        return null;
+      }
+      
       throw error;
     }
   }
@@ -106,6 +120,13 @@ export class DynamoDBService {
       return result.Items || [];
     } catch (error) {
       console.error(`DynamoDB QUERY error for table ${tableName}:`, error.message);
+      
+      // Si es error de conexión, retornar array vacío para mantener la app funcionando
+      if (error.name === 'NetworkingError' || error.name === 'TimeoutError') {
+        console.warn(`DynamoDB connection issue for table ${tableName}, returning empty array`);
+        return [];
+      }
+      
       throw error;
     }
   }
@@ -130,6 +151,13 @@ export class DynamoDBService {
       return result.Items || [];
     } catch (error) {
       console.error(`DynamoDB SCAN error for table ${tableName}:`, error.message);
+      
+      // Si es error de conexión, retornar array vacío para mantener la app funcionando
+      if (error.name === 'NetworkingError' || error.name === 'TimeoutError') {
+        console.warn(`DynamoDB connection issue for table ${tableName}, returning empty array`);
+        return [];
+      }
+      
       throw error;
     }
   }

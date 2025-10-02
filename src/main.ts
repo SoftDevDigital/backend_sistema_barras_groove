@@ -99,4 +99,18 @@ async function bootstrap() {
   console.log(`CORS Origin: ${appConfig.corsOrigin}`);
   console.log(`DynamoDB Region: ${appConfig.aws.region}`);
 }
-bootstrap();
+// Manejar errores no capturados
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  // No hacer process.exit() para mantener la app funcionando
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  // No hacer process.exit() para mantener la app funcionando
+});
+
+bootstrap().catch((error) => {
+  console.error('Bootstrap failed:', error);
+  process.exit(1);
+});

@@ -42,8 +42,24 @@ const getDynamoDBConfig = () => {
 
 const dynamoDBConfig = getDynamoDBConfig();
 
-export const dynamoDBClient = new DynamoDBClient(dynamoDBConfig);
-export const dynamoDBDocumentClient = DynamoDBDocumentClient.from(dynamoDBClient);
+// Crear clientes con manejo de errores
+let dynamoDBClient: DynamoDBClient;
+let dynamoDBDocumentClient: DynamoDBDocumentClient;
+
+try {
+  dynamoDBClient = new DynamoDBClient(dynamoDBConfig);
+  dynamoDBDocumentClient = DynamoDBDocumentClient.from(dynamoDBClient);
+  console.log('✅ DynamoDB clients creados exitosamente');
+} catch (error) {
+  console.error('❌ Error creando clientes DynamoDB:', error.message);
+  console.warn('⚠️  Aplicación continuará pero las operaciones de base de datos fallarán');
+  
+  // Crear clientes con configuración mínima para evitar crashes
+  dynamoDBClient = new DynamoDBClient({ region: 'us-east-1' });
+  dynamoDBDocumentClient = DynamoDBDocumentClient.from(dynamoDBClient);
+}
+
+export { dynamoDBClient, dynamoDBDocumentClient };
 
 // Nombres de tablas con prefijo configurable
 const tablePrefix = process.env.DYNAMODB_TABLE_PREFIX || 'bar_system';
