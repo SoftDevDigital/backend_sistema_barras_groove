@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { appConfig, validateConfig } from './shared/config/app.config';
 import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
+import { DatabaseInitService } from './shared/services/database-init.service';
 import * as dotenv from 'dotenv';
 import { Server } from 'net';
 
@@ -48,6 +49,15 @@ async function bootstrap() {
   validateConfig();
   
   const app = await NestFactory.create(AppModule);
+  
+  // Inicializar base de datos automáticamente
+  try {
+    const databaseInitService = app.get(DatabaseInitService);
+    await databaseInitService.initializeDatabase();
+  } catch (error) {
+    console.error('Failed to initialize database:', error.message);
+    console.warn('Application will continue but some features may not work properly');
+  }
   
   // Habilitar CORS
   app.enableCors({

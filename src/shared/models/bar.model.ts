@@ -25,31 +25,32 @@ export class BarModel extends BaseModel implements IBar {
 
   toDynamoDBItem(): Record<string, any> {
     return {
-      PK: { S: `BAR#${this.id}` },
-      SK: { S: `BAR#${this.id}` },
-      GSI1PK: { S: `EVENT#${this.eventId}` },
-      GSI1SK: { S: `BAR#${this.id}` },
-      GSI2PK: { S: `BAR#${this.status}` },
-      GSI2SK: { S: this.createdAt },
-      ...super.toDynamoDBItem(),
-      name: { S: this.name },
-      eventId: { S: this.eventId },
-      printer: { S: this.printer },
-      status: { S: this.status },
+      PK: `BAR#${this.id}`,
+      SK: `BAR#${this.id}`,
+      GSI1PK: `EVENT#${this.eventId}`,
+      GSI1SK: `BAR#${this.id}`,
+      GSI2PK: `BAR#${this.status}`,
+      GSI2SK: this.createdAt,
+      id: this.id,
+      name: this.name,
+      eventId: this.eventId,
+      printer: this.printer,
+      status: this.status,
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
     };
   }
 
   static fromDynamoDBItem(item: Record<string, any>): BarModel {
     const bar = new BarModel();
-    const data = BaseModel.fromDynamoDBItem(item);
     
-    bar.id = data.id;
-    bar.name = data.name;
-    bar.eventId = data.eventId;
-    bar.printer = data.printer;
-    bar.status = data.status;
-    bar.createdAt = data.createdAt;
-    bar.updatedAt = data.updatedAt;
+    bar.id = item.id;
+    bar.name = item.name;
+    bar.eventId = item.eventId;
+    bar.printer = item.printer;
+    bar.status = item.status;
+    bar.createdAt = item.createdAt;
+    bar.updatedAt = item.updatedAt;
     
     return bar;
   }
