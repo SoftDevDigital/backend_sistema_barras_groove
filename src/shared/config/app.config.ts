@@ -2,7 +2,7 @@
 const getEnvVar = (key: string, defaultValue: string, required = false): string => {
   const value = process.env[key];
   if (!value && required) {
-    console.warn(`⚠️  Variable de entorno requerida '${key}' no encontrada. Usando valor por defecto.`);
+    console.warn(`Required environment variable '${key}' not found. Using default value.`);
   }
   return value || defaultValue;
 };
@@ -12,7 +12,7 @@ const getEnvNumber = (key: string, defaultValue: number): number => {
   const value = process.env[key];
   const parsed = value ? parseInt(value, 10) : defaultValue;
   if (value && isNaN(parsed)) {
-    console.warn(`⚠️  Variable '${key}' tiene valor inválido '${value}'. Usando valor por defecto: ${defaultValue}`);
+    console.warn(`Variable '${key}' has invalid value '${value}'. Using default value: ${defaultValue}`);
   }
   return parsed;
 };
@@ -57,10 +57,10 @@ export const appConfig = {
 
 // Validar configuración crítica en producción
 export const validateConfig = () => {
-  console.log('🔧 Validando configuración de la aplicación...');
+  console.log('Validating application configuration...');
   
   if (appConfig.nodeEnv === 'production') {
-    console.log('🏭 Ejecutándose en modo PRODUCCIÓN - validando variables críticas...');
+    console.log('Running in PRODUCTION mode - validating critical variables...');
     
     const requiredVars = [
       { key: 'JWT_SECRET', description: 'Secreto para firmar tokens JWT' },
@@ -71,41 +71,41 @@ export const validateConfig = () => {
     const missingVars = requiredVars.filter(({ key }) => !process.env[key] || process.env[key] === '');
     
     if (missingVars.length > 0) {
-      console.error('❌ ERROR CRÍTICO: Variables de entorno requeridas para producción:');
+      console.error('CRITICAL ERROR: Required environment variables for production:');
       missingVars.forEach(({ key, description }) => {
         console.error(`   - ${key}: ${description}`);
       });
-      console.error('💡 Solución: Configura estas variables en tu archivo .env o variables de entorno del sistema');
+      console.error('Solution: Configure these variables in your .env file or system environment variables');
       
       // NO lanzamos error, solo mostramos advertencias para que la app no se detenga
-      console.warn('⚠️  La aplicación continuará con valores por defecto (NO RECOMENDADO para producción)');
+      console.warn('Application will continue with default values (NOT RECOMMENDED for production)');
     }
     
     if (appConfig.jwt.secret === 'your-super-secret-jwt-key-change-in-production') {
-      console.error('❌ ERROR CRÍTICO: JWT_SECRET debe ser cambiado en producción');
-      console.error('💡 Solución: Configura JWT_SECRET con un valor seguro en tu archivo .env');
-      console.warn('⚠️  La aplicación continuará con el secreto por defecto (INSEGURO para producción)');
+      console.error('CRITICAL ERROR: JWT_SECRET must be changed in production');
+      console.error('Solution: Configure JWT_SECRET with a secure value in your .env file');
+      console.warn('Application will continue with default secret (UNSAFE for production)');
     }
   } else {
-    console.log('🔧 Ejecutándose en modo DESARROLLO');
+    console.log('Running in DEVELOPMENT mode');
     
     // Advertencias para desarrollo
     if (!process.env.AWS_ACCESS_KEY_ID || process.env.AWS_ACCESS_KEY_ID === 'your_access_key_here') {
-      console.warn('⚠️  AWS_ACCESS_KEY_ID no configurado - usando valores por defecto');
+      console.warn('AWS_ACCESS_KEY_ID not configured - using default values');
     }
     
     if (!process.env.AWS_SECRET_ACCESS_KEY || process.env.AWS_SECRET_ACCESS_KEY === 'your_secret_key_here') {
-      console.warn('⚠️  AWS_SECRET_ACCESS_KEY no configurado - usando valores por defecto');
+      console.warn('AWS_SECRET_ACCESS_KEY not configured - using default values');
     }
     
     if (appConfig.jwt.secret === 'your-super-secret-jwt-key-change-in-production') {
-      console.warn('⚠️  JWT_SECRET usando valor por defecto - considera cambiarlo para mayor seguridad');
+      console.warn('JWT_SECRET using default value - consider changing it for better security');
     }
   }
   
-  console.log('✅ Validación de configuración completada');
-  console.log(`📊 Puerto: ${appConfig.port}`);
-  console.log(`🌍 Entorno: ${appConfig.nodeEnv}`);
-  console.log(`🗄️  Región AWS: ${appConfig.aws.region}`);
-  console.log(`📋 Prefijo tablas: ${appConfig.dynamodb.tablePrefix}`);
+  console.log('Configuration validation completed');
+  console.log(`Port: ${appConfig.port}`);
+  console.log(`Environment: ${appConfig.nodeEnv}`);
+  console.log(`AWS Region: ${appConfig.aws.region}`);
+  console.log(`Table Prefix: ${appConfig.dynamodb.tablePrefix}`);
 };
