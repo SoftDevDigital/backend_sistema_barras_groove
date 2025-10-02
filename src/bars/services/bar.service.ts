@@ -10,6 +10,11 @@ export class BarService {
   constructor(private readonly dynamoDBService: DynamoDBService) {}
 
   async create(createBarDto: CreateBarDto): Promise<IBar> {
+    // Validar entrada
+    if (!createBarDto.name || !createBarDto.eventId || !createBarDto.printer) {
+      throw new BadRequestException('Name, event ID, and printer are required');
+    }
+
     // Verificar que el evento existe
     await this.validateEventExists(createBarDto.eventId);
 
@@ -115,6 +120,11 @@ export class BarService {
   }
 
   async findOne(id: string): Promise<IBar> {
+    // Validar entrada
+    if (!id) {
+      throw new BadRequestException('Bar ID is required');
+    }
+
     const item = await this.dynamoDBService.get(TABLE_NAMES.BARS, {
       PK: `BAR#${id}`,
       SK: `BAR#${id}`,
@@ -171,6 +181,11 @@ export class BarService {
   }
 
   async findByEvent(eventId: string): Promise<IBar[]> {
+    // Validar entrada
+    if (!eventId) {
+      throw new BadRequestException('Event ID is required');
+    }
+
     console.log(`🔍 Searching bars for event: ${eventId}`);
     
     try {
@@ -213,6 +228,15 @@ export class BarService {
   }
 
   async findByStatus(status: 'active' | 'closed'): Promise<IBar[]> {
+    // Validar entrada
+    if (!status) {
+      throw new BadRequestException('Status is required');
+    }
+
+    if (status !== 'active' && status !== 'closed') {
+      throw new BadRequestException('Status must be either "active" or "closed"');
+    }
+
     try {
       const items = await this.dynamoDBService.query(
         TABLE_NAMES.BARS,

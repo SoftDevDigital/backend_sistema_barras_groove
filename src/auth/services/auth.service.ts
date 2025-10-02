@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ConflictException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { DynamoDBService } from '../../shared/services/dynamodb.service';
@@ -15,6 +15,11 @@ export class AuthService {
   ) {}
 
   async register(registerDto: RegisterDto): Promise<IAuthResponse> {
+    // Validar entrada
+    if (!registerDto.email || !registerDto.password || !registerDto.name) {
+      throw new BadRequestException('Email, password, and name are required');
+    }
+
     // Check if user already exists
     const existingUser = await this.dynamoDBService.get(TABLE_NAMES.USERS, {
       PK: `USER#${registerDto.email}`,
@@ -59,6 +64,11 @@ export class AuthService {
   }
 
   async login(loginDto: LoginDto): Promise<IAuthResponse> {
+    // Validar entrada
+    if (!loginDto.email || !loginDto.password) {
+      throw new BadRequestException('Email and password are required');
+    }
+
     // Find user by email
     const user = await this.dynamoDBService.get(TABLE_NAMES.USERS, {
       PK: `USER#${loginDto.email}`,
@@ -96,6 +106,11 @@ export class AuthService {
   }
 
   async validateUser(userId: string): Promise<any> {
+    // Validar entrada
+    if (!userId) {
+      throw new BadRequestException('User ID is required');
+    }
+
     const user = await this.dynamoDBService.get(TABLE_NAMES.USERS, {
       PK: `USER#${userId}`,
       SK: `USER#${userId}`,

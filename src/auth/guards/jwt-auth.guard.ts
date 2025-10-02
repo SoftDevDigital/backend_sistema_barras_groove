@@ -11,15 +11,27 @@ export class JwtAuthGuard implements CanActivate {
     const token = this.extractTokenFromHeader(request);
 
     if (!token) {
-      throw new UnauthorizedException('No token provided');
+      throw new UnauthorizedException('Access denied. No authentication token provided. Please log in first.');
     }
 
     try {
       const payload = this.jwtService.verify(token);
+      
+      // Validar que el payload tenga los campos necesarios
+      if (!payload.sub || !payload.email || !payload.role) {
+        throw new UnauthorizedException('Access denied. Invalid token format. Please log in again.');
+      }
+      
       request['user'] = payload;
       return true;
     } catch (error) {
-      throw new UnauthorizedException('Invalid token');
+      if (error.name === 'TokenExpiredError') {
+        throw new UnauthorizedException('Access denied. Your session has expired. Please log in again.');
+      } else if (error.name === 'JsonWebTokenError') {
+        throw new UnauthorizedException('Access denied. Invalid authentication token. Please log in again.');
+      } else {
+        throw new UnauthorizedException('Access denied. Authentication failed. Please log in again.');
+      }
     }
   }
 

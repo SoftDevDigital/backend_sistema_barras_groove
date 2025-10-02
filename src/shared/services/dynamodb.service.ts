@@ -19,22 +19,32 @@ export class DynamoDBService {
   }
 
   async put(tableName: string, item: Record<string, any>): Promise<void> {
-    const command = new PutCommand({
-      TableName: tableName,
-      Item: item,
-    });
+    try {
+      const command = new PutCommand({
+        TableName: tableName,
+        Item: item,
+      });
 
-    await this.client.send(command);
+      await this.client.send(command);
+    } catch (error) {
+      console.error(`DynamoDB PUT error for table ${tableName}:`, error.message);
+      throw error;
+    }
   }
 
   async get(tableName: string, key: Record<string, any>): Promise<Record<string, any> | null> {
-    const command = new GetCommand({
-      TableName: tableName,
-      Key: key,
-    });
+    try {
+      const command = new GetCommand({
+        TableName: tableName,
+        Key: key,
+      });
 
-    const result = await this.client.send(command);
-    return result.Item || null;
+      const result = await this.client.send(command);
+      return result.Item || null;
+    } catch (error) {
+      console.error(`DynamoDB GET error for table ${tableName}:`, error.message);
+      throw error;
+    }
   }
 
   async update(
@@ -44,26 +54,36 @@ export class DynamoDBService {
     expressionAttributeValues: Record<string, any>,
     expressionAttributeNames?: Record<string, string>
   ): Promise<Record<string, any>> {
-    const command = new UpdateCommand({
-      TableName: tableName,
-      Key: key,
-      UpdateExpression: updateExpression,
-      ExpressionAttributeValues: expressionAttributeValues,
-      ExpressionAttributeNames: expressionAttributeNames,
-      ReturnValues: 'ALL_NEW',
-    });
+    try {
+      const command = new UpdateCommand({
+        TableName: tableName,
+        Key: key,
+        UpdateExpression: updateExpression,
+        ExpressionAttributeValues: expressionAttributeValues,
+        ExpressionAttributeNames: expressionAttributeNames,
+        ReturnValues: 'ALL_NEW',
+      });
 
-    const result = await this.client.send(command);
-    return result.Attributes || {};
+      const result = await this.client.send(command);
+      return result.Attributes || {};
+    } catch (error) {
+      console.error(`DynamoDB UPDATE error for table ${tableName}:`, error.message);
+      throw error;
+    }
   }
 
   async delete(tableName: string, key: Record<string, any>): Promise<void> {
-    const command = new DeleteCommand({
-      TableName: tableName,
-      Key: key,
-    });
+    try {
+      const command = new DeleteCommand({
+        TableName: tableName,
+        Key: key,
+      });
 
-    await this.client.send(command);
+      await this.client.send(command);
+    } catch (error) {
+      console.error(`DynamoDB DELETE error for table ${tableName}:`, error.message);
+      throw error;
+    }
   }
 
   async query(
@@ -73,16 +93,21 @@ export class DynamoDBService {
     expressionAttributeNames?: Record<string, string>,
     indexName?: string
   ): Promise<Record<string, any>[]> {
-    const command = new QueryCommand({
-      TableName: tableName,
-      IndexName: indexName,
-      KeyConditionExpression: keyConditionExpression,
-      ExpressionAttributeValues: expressionAttributeValues,
-      ExpressionAttributeNames: expressionAttributeNames,
-    });
+    try {
+      const command = new QueryCommand({
+        TableName: tableName,
+        IndexName: indexName,
+        KeyConditionExpression: keyConditionExpression,
+        ExpressionAttributeValues: expressionAttributeValues,
+        ExpressionAttributeNames: expressionAttributeNames,
+      });
 
-    const result = await this.client.send(command);
-    return result.Items || [];
+      const result = await this.client.send(command);
+      return result.Items || [];
+    } catch (error) {
+      console.error(`DynamoDB QUERY error for table ${tableName}:`, error.message);
+      throw error;
+    }
   }
 
   async scan(
@@ -92,15 +117,20 @@ export class DynamoDBService {
     expressionAttributeNames?: Record<string, string>,
     indexName?: string
   ): Promise<Record<string, any>[]> {
-    const command = new ScanCommand({
-      TableName: tableName,
-      IndexName: indexName,
-      FilterExpression: filterExpression,
-      ExpressionAttributeValues: expressionAttributeValues,
-      ExpressionAttributeNames: expressionAttributeNames,
-    });
+    try {
+      const command = new ScanCommand({
+        TableName: tableName,
+        IndexName: indexName,
+        FilterExpression: filterExpression,
+        ExpressionAttributeValues: expressionAttributeValues,
+        ExpressionAttributeNames: expressionAttributeNames,
+      });
 
-    const result = await this.client.send(command);
-    return result.Items || [];
+      const result = await this.client.send(command);
+      return result.Items || [];
+    } catch (error) {
+      console.error(`DynamoDB SCAN error for table ${tableName}:`, error.message);
+      throw error;
+    }
   }
 }

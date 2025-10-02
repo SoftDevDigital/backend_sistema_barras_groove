@@ -10,12 +10,32 @@ export class EventService {
   constructor(private readonly dynamoDBService: DynamoDBService) {}
 
   async create(createEventDto: CreateEventDto): Promise<IEvent> {
+    // Validar entrada
+    if (!createEventDto.name || !createEventDto.startDate || !createEventDto.endDate) {
+      throw new BadRequestException('Name, start date, and end date are required');
+    }
+
     // Validar fechas
     const startDate = new Date(createEventDto.startDate);
     const endDate = new Date(createEventDto.endDate);
 
+    // Verificar que las fechas sean válidas
+    if (isNaN(startDate.getTime())) {
+      throw new BadRequestException('Invalid start date format. Please use ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ)');
+    }
+
+    if (isNaN(endDate.getTime())) {
+      throw new BadRequestException('Invalid end date format. Please use ISO 8601 format (YYYY-MM-DDTHH:mm:ss.sssZ)');
+    }
+
     if (startDate >= endDate) {
       throw new BadRequestException('End date must be after start date');
+    }
+
+    // Verificar que la fecha de inicio no sea en el pasado (opcional)
+    const now = new Date();
+    if (startDate < now) {
+      throw new BadRequestException('Start date cannot be in the past');
     }
 
     // Verificar si ya existe un evento con el mismo nombre
