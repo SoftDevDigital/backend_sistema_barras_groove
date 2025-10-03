@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { DynamoDBService } from '../../shared/services/dynamodb.service';
+import { CustomLoggerService } from '../../shared/services/logger.service';
 import { ProductModel } from '../../shared/models/product.model';
 import { IProduct, IProductCreate, IProductUpdate, IProductKey, IProductStockUpdate, IProductStockAlert } from '../../shared/interfaces/product.interface';
 import { CreateProductDto, UpdateProductDto, ProductQueryDto, StockUpdateDto } from '../dto/product.dto';
@@ -7,6 +8,8 @@ import { TABLE_NAMES } from '../../shared/config/dynamodb.config';
 
 @Injectable()
 export class ProductService {
+  private readonly logger = new CustomLoggerService();
+
   constructor(private readonly dynamoDBService: DynamoDBService) {}
 
   async create(createProductDto: CreateProductDto): Promise<IProduct> {
@@ -36,12 +39,14 @@ export class ProductService {
       const productData = product.toDynamoDB();
       await this.dynamoDBService.put(TABLE_NAMES.PRODUCTS, productData);
       
-      console.log(`Product created successfully: ${product.name} (ID: ${product.id})`);
+      this.logger.success(`Product created: ${product.name} (ID: ${product.id})`, 'ProductService');
       return product;
 
     } catch (error) {
-      // Log del error para debugging
-      console.error('Error creating product:', error);
+      // Solo loggear errores inesperados, no errores de validación
+      if (!(error instanceof BadRequestException) && !(error instanceof ConflictException)) {
+        this.logger.error('Unexpected error creating product:', undefined, 'ProductService');
+      }
       
       // Re-lanzar errores de validación sin modificar
       if (error instanceof BadRequestException || error instanceof ConflictException) {
@@ -144,11 +149,14 @@ export class ProductService {
         products = products.slice(start, end);
       }
       
-      console.log(`Retrieved ${products.length} products with applied filters`);
+      this.logger.info(`Retrieved ${products.length} products with applied filters`, 'ProductService');
       return products;
 
     } catch (error) {
-      console.error('Error fetching products:', error);
+      // Solo loggear errores inesperados
+      if (!(error instanceof BadRequestException)) {
+        this.logger.error('Unexpected error fetching products:', undefined, 'ProductService');
+      }
       
       if (error instanceof BadRequestException) {
         throw error;
@@ -197,15 +205,21 @@ export class ProductService {
 
       try {
         const product = ProductModel.fromDynamoDB(result);
-        console.log(`Product retrieved successfully: ${product.name} (ID: ${product.id})`);
+        // Log informativo solo en desarrollo
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`🔍 Product retrieved: ${product.name} (ID: ${product.id})`);
+        }
         return product;
       } catch (conversionError) {
-        console.error('Error converting DynamoDB result to product:', conversionError);
+        console.error('❌ Error converting DynamoDB result to product:', conversionError);
         throw new BadRequestException('Product data is corrupted. Please contact system administrator.');
       }
 
     } catch (error) {
-      console.error(`Error fetching product with ID '${id}':`, error);
+      // Solo loggear errores inesperados
+      if (!(error instanceof NotFoundException) && !(error instanceof BadRequestException)) {
+        console.error(`❌ Unexpected error fetching product '${id}':`, error);
+      }
       
       if (error instanceof NotFoundException || error instanceof BadRequestException) {
         throw error;
@@ -268,11 +282,17 @@ export class ProductService {
       const productData = product.toDynamoDB();
       await this.dynamoDBService.put(TABLE_NAMES.PRODUCTS, productData);
       
-      console.log(`Product updated successfully: ${product.name} (ID: ${product.id})`);
+      // Log informativo solo en desarrollo
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`✏️ Product updated: ${product.name} (ID: ${product.id})`);
+      }
       return product;
 
     } catch (error) {
-      console.error(`Error updating product with ID '${id}':`, error);
+      // Solo loggear errores inesperados
+      if (!(error instanceof NotFoundException) && !(error instanceof BadRequestException) && !(error instanceof ConflictException)) {
+        console.error(`❌ Unexpected error updating product '${id}':`, error);
+      }
       
       if (error instanceof NotFoundException || error instanceof BadRequestException || error instanceof ConflictException) {
         throw error;
@@ -315,7 +335,10 @@ export class ProductService {
         SK: `PRODUCT#${cleanId}`,
       });
 
-      console.log(`Product deleted successfully: ${product.name} (ID: ${cleanId})`);
+      // Log informativo solo en desarrollo
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`🗑️ Product deleted: ${product.name} (ID: ${cleanId})`);
+      }
       
       return {
         message: `Product '${product.name}' deleted successfully`,
@@ -323,7 +346,10 @@ export class ProductService {
       };
 
     } catch (error) {
-      console.error(`Error deleting product with ID '${id}':`, error);
+      // Solo loggear errores inesperados
+      if (!(error instanceof NotFoundException) && !(error instanceof BadRequestException) && !(error instanceof ConflictException)) {
+        console.error(`❌ Unexpected error deleting product '${id}':`, error);
+      }
       
       if (error instanceof NotFoundException || error instanceof BadRequestException || error instanceof ConflictException) {
         throw error;
@@ -486,11 +512,17 @@ export class ProductService {
       const productData = productModel.toDynamoDB();
       await this.dynamoDBService.put(TABLE_NAMES.PRODUCTS, productData);
       
-      console.log(`Stock updated successfully for product '${product.name}': ${stockUpdateDto.type} ${stockUpdateDto.quantity} (new stock: ${productModel.stock})`);
+      // Log informativo solo en desarrollo
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`📊 Stock updated: ${product.name} ${stockUpdateDto.type} ${stockUpdateDto.quantity} (new: ${productModel.stock})`);
+      }
       return productModel;
 
     } catch (error) {
-      console.error(`Error updating stock for product '${productId}':`, error);
+      // Solo loggear errores inesperados
+      if (!(error instanceof NotFoundException) && !(error instanceof BadRequestException)) {
+        console.error(`❌ Unexpected error updating stock for product '${productId}':`, error);
+      }
       
       if (error instanceof NotFoundException || error instanceof BadRequestException) {
         throw error;
