@@ -10,36 +10,92 @@ export class ProductService {
   constructor(private readonly dynamoDBService: DynamoDBService) {}
 
   async create(createProductDto: CreateProductDto): Promise<IProduct> {
-    // Validar que la tecla rápida sea única si se proporciona
-    if (createProductDto.quickKey) {
-      await this.validateQuickKeyUniqueness(createProductDto.quickKey);
-    }
-
-    const product = new ProductModel(createProductDto);
-    const validationErrors = product.validate();
-    
-    if (validationErrors.length > 0) {
-      throw new BadRequestException(`Validation failed: ${validationErrors.join(', ')}`);
-    }
-
-    if (!product.isValidQuickKey()) {
-      throw new BadRequestException('Quick key must contain only uppercase letters and numbers');
-    }
-
     try {
-      await this.dynamoDBService.put(TABLE_NAMES.PRODUCTS, product.toDynamoDB());
+      // Validar entrada básica
+      if (!createProductDto || !createProductDto.name || !createProductDto.price) {
+        throw new BadRequestException('Product name and price are required');
+      }
+
+      // Validar que la tecla rápida sea única si se proporciona
+      if (createProductDto.quickKey) {
+        await this.validateQuickKeyUniqueness(createProductDto.quickKey);
+      }
+
+      const product = new ProductModel(createProductDto);
+      const validationErrors = product.validate();
+      
+      if (validationErrors.length > 0) {
+        throw new BadRequestException(`Product validation failed: ${validationErrors.join(', ')}`);
+      }
+
+      if (!product.isValidQuickKey()) {
+        throw new BadRequestException('Quick key must contain only uppercase letters and numbers (max 10 characters)');
+      }
+
+      // Intentar crear el producto en la base de datos
+      const productData = product.toDynamoDB();
+      await this.dynamoDBService.put(TABLE_NAMES.PRODUCTS, productData);
+      
+      console.log(`Product created successfully: ${product.name} (ID: ${product.id})`);
       return product;
+
     } catch (error) {
-      throw new BadRequestException(`Failed to create product: ${error.message}`);
+      // Log del error para debugging
+      console.error('Error creating product:', error);
+      
+      // Re-lanzar errores de validación sin modificar
+      if (error instanceof BadRequestException || error instanceof ConflictException) {
+        throw error;
+      }
+      
+      // Manejar errores de base de datos
+      if (error.name === 'ValidationException') {
+        throw new BadRequestException('Invalid product data format');
+      } else if (error.name === 'ResourceNotFoundException') {
+        throw new BadRequestException('Products table not found. Please contact system administrator');
+      } else if (error.name === 'ConditionalCheckFailedException') {
+        throw new ConflictException('Product with this quick key already exists');
+      }
+      
+      // Error genérico
+      throw new BadRequestException(`Failed to create product '${createProductDto.name}'. Please try again or contact support if the problem persists.`);
     }
   }
 
   async findAll(query: ProductQueryDto): Promise<IProduct[]> {
     try {
-      // Por ahora usar scan hasta que tengamos los índices GSI configurados
+      // Validar parámetros de paginación
+      if (query.limit && (query.limit < 1 || query.limit > 1000)) {
+        throw new BadRequestException('Limit must be between 1 and 1000');
+      }
+      if (query.offset && query.offset < 0) {
+        throw new BadRequestException('Offset cannot be negative');
+      }
+
+      // Validar parámetros de ordenamiento
+      if (query.sort_by && !['name', 'price', 'created_at', 'updated_at', 'stock', 'category'].includes(query.sort_by)) {
+        throw new BadRequestException('Invalid sort field. Valid options: name, price, created_at, updated_at, stock, category');
+      }
+      if (query.sort_order && !['asc', 'desc'].includes(query.sort_order)) {
+        throw new BadRequestException('Invalid sort order. Valid options: asc, desc');
+      }
+
+      // Obtener productos de la base de datos
       const result = await this.dynamoDBService.scan(TABLE_NAMES.PRODUCTS);
       
-      let products: IProduct[] = result.map(item => ProductModel.fromDynamoDB(item));
+      if (!result || !Array.isArray(result)) {
+        console.warn('Unexpected result format from DynamoDB scan');
+        return [];
+      }
+
+      let products: IProduct[] = result.map(item => {
+        try {
+          return ProductModel.fromDynamoDB(item);
+        } catch (error) {
+          console.error('Error converting DynamoDB item to product:', error);
+          return null;
+        }
+      }).filter(product => product !== null);
       
       // Aplicar filtros
       if (query.status) {
@@ -53,6 +109,8 @@ export class ProductService {
           case 'all':
             // No filtrar por estado
             break;
+          default:
+            throw new BadRequestException('Invalid status filter. Valid options: active, inactive, all');
         }
       } else if (query.active !== undefined) {
         // Compatibilidad con el parámetro active
@@ -60,9 +118,9 @@ export class ProductService {
       }
 
       // Filtros adicionales
-      if (query.category) {
+      if (query.category && query.category.trim()) {
         products = products.filter(product => 
-          product.category.toLowerCase().includes(query.category!.toLowerCase())
+          product.category && product.category.toLowerCase().includes(query.category!.toLowerCase())
         );
       }
 
@@ -86,9 +144,24 @@ export class ProductService {
         products = products.slice(start, end);
       }
       
+      console.log(`Retrieved ${products.length} products with applied filters`);
       return products;
+
     } catch (error) {
-      throw new BadRequestException(`Failed to fetch products: ${error.message}`);
+      console.error('Error fetching products:', error);
+      
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      
+      // Manejar errores de base de datos
+      if (error.name === 'ResourceNotFoundException') {
+        throw new BadRequestException('Products table not found. Please contact system administrator');
+      } else if (error.name === 'ValidationException') {
+        throw new BadRequestException('Invalid query parameters');
+      }
+      
+      throw new BadRequestException('Failed to retrieve products. Please try again or contact support if the problem persists.');
     }
   }
 
@@ -103,73 +176,167 @@ export class ProductService {
 
   async findOne(id: string): Promise<IProduct> {
     try {
+      // Validar ID
+      if (!id || typeof id !== 'string' || id.trim().length === 0) {
+        throw new BadRequestException('Product ID is required and must be a valid string');
+      }
+
+      const cleanId = id.trim();
+      if (cleanId.length < 10) {
+        throw new BadRequestException('Invalid product ID format');
+      }
+
       const result = await this.dynamoDBService.get(TABLE_NAMES.PRODUCTS, {
-        PK: `PRODUCT#${id}`,
-        SK: `PRODUCT#${id}`,
+        PK: `PRODUCT#${cleanId}`,
+        SK: `PRODUCT#${cleanId}`,
       });
 
       if (!result) {
-        throw new NotFoundException(`Product with ID ${id} not found`);
+        throw new NotFoundException(`Product with ID '${cleanId}' not found. Please verify the ID and try again.`);
       }
 
-      return ProductModel.fromDynamoDB(result);
+      try {
+        const product = ProductModel.fromDynamoDB(result);
+        console.log(`Product retrieved successfully: ${product.name} (ID: ${product.id})`);
+        return product;
+      } catch (conversionError) {
+        console.error('Error converting DynamoDB result to product:', conversionError);
+        throw new BadRequestException('Product data is corrupted. Please contact system administrator.');
+      }
+
     } catch (error) {
-      if (error instanceof NotFoundException) {
+      console.error(`Error fetching product with ID '${id}':`, error);
+      
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
         throw error;
       }
-      throw new BadRequestException(`Failed to fetch product: ${error.message}`);
+      
+      // Manejar errores de base de datos
+      if (error.name === 'ResourceNotFoundException') {
+        throw new BadRequestException('Products table not found. Please contact system administrator');
+      } else if (error.name === 'ValidationException') {
+        throw new BadRequestException('Invalid product ID format');
+      }
+      
+      throw new BadRequestException(`Failed to retrieve product with ID '${id}'. Please try again or contact support if the problem persists.`);
     }
   }
 
   async update(id: string, updateProductDto: UpdateProductDto): Promise<IProduct> {
-    const existingProduct = await this.findOne(id);
-
-    // Validar que la nueva tecla rápida sea única si se está cambiando
-    if (updateProductDto.quickKey && updateProductDto.quickKey !== existingProduct.quickKey) {
-      await this.validateQuickKeyUniqueness(updateProductDto.quickKey, id);
-    }
-
-    const product = ProductModel.fromDynamoDB(existingProduct);
-    product.update(updateProductDto);
-
-    const validationErrors = product.validate();
-    if (validationErrors.length > 0) {
-      throw new BadRequestException(`Validation failed: ${validationErrors.join(', ')}`);
-    }
-
-    if (!product.isValidQuickKey()) {
-      throw new BadRequestException('Quick key must contain only uppercase letters and numbers');
-    }
-
     try {
-      await this.dynamoDBService.put(TABLE_NAMES.PRODUCTS, product.toDynamoDB());
+      // Validar entrada
+      if (!updateProductDto || Object.keys(updateProductDto).length === 0) {
+        throw new BadRequestException('At least one field must be provided for update');
+      }
+
+      // Validar que no se intente cambiar el ID
+      if (updateProductDto.name !== undefined && updateProductDto.name.trim().length === 0) {
+        throw new BadRequestException('Product name cannot be empty');
+      }
+
+      if (updateProductDto.price !== undefined && updateProductDto.price < 0) {
+        throw new BadRequestException('Product price cannot be negative');
+      }
+
+      // Obtener producto existente
+      const existingProduct = await this.findOne(id);
+
+      // Validar que la nueva tecla rápida sea única si se está cambiando
+      if (updateProductDto.quickKey && updateProductDto.quickKey !== existingProduct.quickKey) {
+        await this.validateQuickKeyUniqueness(updateProductDto.quickKey, id);
+      }
+
+      // Crear producto actualizado
+      const product = new ProductModel({
+        ...existingProduct,
+        ...updateProductDto,
+        quickKey: existingProduct.quickKey || undefined,
+      });
+      product.update(updateProductDto);
+
+      // Validar el producto actualizado
+      const validationErrors = product.validate();
+      if (validationErrors.length > 0) {
+        throw new BadRequestException(`Update validation failed: ${validationErrors.join(', ')}`);
+      }
+
+      if (!product.isValidQuickKey()) {
+        throw new BadRequestException('Quick key must contain only uppercase letters and numbers (max 10 characters)');
+      }
+
+      // Actualizar en la base de datos
+      const productData = product.toDynamoDB();
+      await this.dynamoDBService.put(TABLE_NAMES.PRODUCTS, productData);
+      
+      console.log(`Product updated successfully: ${product.name} (ID: ${product.id})`);
       return product;
+
     } catch (error) {
-      throw new BadRequestException(`Failed to update product: ${error.message}`);
+      console.error(`Error updating product with ID '${id}':`, error);
+      
+      if (error instanceof NotFoundException || error instanceof BadRequestException || error instanceof ConflictException) {
+        throw error;
+      }
+      
+      // Manejar errores de base de datos
+      if (error.name === 'ResourceNotFoundException') {
+        throw new BadRequestException('Products table not found. Please contact system administrator');
+      } else if (error.name === 'ValidationException') {
+        throw new BadRequestException('Invalid update data format');
+      } else if (error.name === 'ConditionalCheckFailedException') {
+        throw new ConflictException('Product data conflict. Please refresh and try again.');
+      }
+      
+      throw new BadRequestException(`Failed to update product with ID '${id}'. Please try again or contact support if the problem persists.`);
     }
   }
 
   async remove(id: string): Promise<{ message: string; deletedProduct: IProduct }> {
-    const product = await this.findOne(id);
-
-    // Verificar si el producto tiene tickets asociados
-    const hasTickets = await this.checkProductHasTickets(id);
-    if (hasTickets) {
-      throw new ConflictException('Cannot delete product with associated tickets');
-    }
-
     try {
+      // Validar ID
+      if (!id || typeof id !== 'string' || id.trim().length === 0) {
+        throw new BadRequestException('Product ID is required and must be a valid string');
+      }
+
+      const cleanId = id.trim();
+      
+      // Obtener producto existente
+      const product = await this.findOne(cleanId);
+
+      // Verificar si el producto tiene tickets asociados
+      const hasTickets = await this.checkProductHasTickets(cleanId);
+      if (hasTickets) {
+        throw new ConflictException(`Cannot delete product '${product.name}' because it has associated sales. Please deactivate it instead.`);
+      }
+
+      // Intentar eliminar el producto
       await this.dynamoDBService.delete(TABLE_NAMES.PRODUCTS, {
-        PK: `PRODUCT#${id}`,
-        SK: `PRODUCT#${id}`,
+        PK: `PRODUCT#${cleanId}`,
+        SK: `PRODUCT#${cleanId}`,
       });
 
+      console.log(`Product deleted successfully: ${product.name} (ID: ${cleanId})`);
+      
       return {
-        message: 'Product deleted successfully',
+        message: `Product '${product.name}' deleted successfully`,
         deletedProduct: product,
       };
+
     } catch (error) {
-      throw new BadRequestException(`Failed to delete product: ${error.message}`);
+      console.error(`Error deleting product with ID '${id}':`, error);
+      
+      if (error instanceof NotFoundException || error instanceof BadRequestException || error instanceof ConflictException) {
+        throw error;
+      }
+      
+      // Manejar errores de base de datos
+      if (error.name === 'ResourceNotFoundException') {
+        throw new BadRequestException('Products table not found. Please contact system administrator');
+      } else if (error.name === 'ValidationException') {
+        throw new BadRequestException('Invalid product ID format');
+      }
+      
+      throw new BadRequestException(`Failed to delete product with ID '${id}'. Please try again or contact support if the problem persists.`);
     }
   }
 
@@ -276,33 +443,67 @@ export class ProductService {
   }
 
   async updateStock(productId: string, stockUpdateDto: StockUpdateDto): Promise<IProduct> {
-    const product = await this.findOne(productId);
-    const productModel = new ProductModel({
-      ...product,
-      quickKey: product.quickKey || undefined,
-    });
-
-    switch (stockUpdateDto.type) {
-      case 'add':
-        productModel.addStock(stockUpdateDto.quantity);
-        break;
-      case 'subtract':
-        if (!productModel.subtractStock(stockUpdateDto.quantity)) {
-          throw new BadRequestException('Insufficient stock');
-        }
-        break;
-      case 'set':
-        productModel.setStock(stockUpdateDto.quantity);
-        break;
-      default:
-        throw new BadRequestException('Invalid stock update type');
-    }
-
     try {
-      await this.dynamoDBService.put(TABLE_NAMES.PRODUCTS, productModel.toDynamoDB());
+      // Validar entrada
+      if (!stockUpdateDto || !stockUpdateDto.type || stockUpdateDto.quantity === undefined) {
+        throw new BadRequestException('Stock update type and quantity are required');
+      }
+
+      if (stockUpdateDto.quantity < 0) {
+        throw new BadRequestException('Stock quantity cannot be negative');
+      }
+
+      if (!['add', 'subtract', 'set'].includes(stockUpdateDto.type)) {
+        throw new BadRequestException('Invalid stock update type. Valid options: add, subtract, set');
+      }
+
+      // Obtener producto existente
+      const product = await this.findOne(productId);
+      
+      // Crear modelo del producto
+      const productModel = new ProductModel({
+        ...product,
+        quickKey: product.quickKey || undefined,
+      });
+
+      // Validar operaciones de stock
+      switch (stockUpdateDto.type) {
+        case 'add':
+          productModel.addStock(stockUpdateDto.quantity);
+          break;
+        case 'subtract':
+          if (productModel.stock < stockUpdateDto.quantity) {
+            throw new BadRequestException(`Insufficient stock. Current stock: ${productModel.stock}, requested: ${stockUpdateDto.quantity}`);
+          }
+          productModel.subtractStock(stockUpdateDto.quantity);
+          break;
+        case 'set':
+          productModel.setStock(stockUpdateDto.quantity);
+          break;
+      }
+
+      // Actualizar en la base de datos
+      const productData = productModel.toDynamoDB();
+      await this.dynamoDBService.put(TABLE_NAMES.PRODUCTS, productData);
+      
+      console.log(`Stock updated successfully for product '${product.name}': ${stockUpdateDto.type} ${stockUpdateDto.quantity} (new stock: ${productModel.stock})`);
       return productModel;
+
     } catch (error) {
-      throw new BadRequestException(`Failed to update stock: ${error.message}`);
+      console.error(`Error updating stock for product '${productId}':`, error);
+      
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      
+      // Manejar errores de base de datos
+      if (error.name === 'ResourceNotFoundException') {
+        throw new BadRequestException('Products table not found. Please contact system administrator');
+      } else if (error.name === 'ValidationException') {
+        throw new BadRequestException('Invalid stock update data format');
+      }
+      
+      throw new BadRequestException(`Failed to update stock for product with ID '${productId}'. Please try again or contact support if the problem persists.`);
     }
   }
 
