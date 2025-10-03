@@ -1,8 +1,17 @@
 export interface IProduct {
   id: string;
   name: string;
+  description?: string;
   price: number;
+  cost?: number;
   quickKey: string | null;
+  category: string;
+  unit: string;
+  stock: number;
+  minStock: number;
+  barcode?: string;
+  taxRate: number;
+  available: boolean;
   active: boolean;
   createdAt: string;
   updatedAt: string;
@@ -10,15 +19,33 @@ export interface IProduct {
 
 export interface IProductCreate {
   name: string;
+  description?: string;
   price: number;
+  cost?: number;
   quickKey?: string;
+  category?: string;
+  unit?: string;
+  stock?: number;
+  minStock?: number;
+  barcode?: string;
+  taxRate?: number;
+  available?: boolean;
   active?: boolean;
 }
 
 export interface IProductUpdate {
   name?: string;
+  description?: string;
   price?: number;
+  cost?: number;
   quickKey?: string;
+  category?: string;
+  unit?: string;
+  stock?: number;
+  minStock?: number;
+  barcode?: string;
+  taxRate?: number;
+  available?: boolean;
   active?: boolean;
 }
 
@@ -27,6 +54,8 @@ export interface IProductKey {
   productName: string;
   price: number;
   quickKey: string;
+  stock: number;
+  available: boolean;
 }
 
 export interface IBarProduct {
@@ -34,4 +63,19 @@ export interface IBarProduct {
   productId: string;
   quickKey: string;
   assignedAt: string;
+}
+
+export interface IProductStockUpdate {
+  productId: string;
+  quantity: number;
+  type: 'add' | 'subtract' | 'set';
+  reason?: string;
+}
+
+export interface IProductStockAlert {
+  productId: string;
+  productName: string;
+  currentStock: number;
+  minStock: number;
+  alertType: 'low_stock' | 'out_of_stock';
 }

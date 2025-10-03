@@ -6,6 +6,7 @@ import { SharedModule } from './shared/shared.module';
 import { AuthModule } from './auth/auth.module';
 import { EventsModule } from './events/events.module';
 import { BarsModule } from './bars/bars.module';
+import { ProductsModule } from './products/products.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { BarsModule } from './bars/bars.module';
     AuthModule,
     EventsModule,
     BarsModule,
+    ProductsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
