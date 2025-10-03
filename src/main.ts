@@ -61,7 +61,28 @@ async function bootstrap() {
   
   // Habilitar CORS
   app.enableCors({
-    origin: appConfig.corsOrigin,
+    origin: (origin, callback) => {
+      // Permitir requests sin origin (ej: mobile apps, Postman, etc.)
+      if (!origin) return callback(null, true);
+      
+      // Permitir localhost:3000 y el origen configurado en variables de entorno
+      const allowedOrigins = [
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+        appConfig.corsOrigin
+      ].filter(origin => origin && origin !== '*');
+      
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      
+      // En desarrollo, permitir cualquier origen localhost
+      if (appConfig.nodeEnv === 'development' && origin.includes('localhost')) {
+        return callback(null, true);
+      }
+      
+      return callback(new Error('Not allowed by CORS'), false);
+    },
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
