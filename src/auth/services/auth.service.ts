@@ -33,12 +33,12 @@ export class AuthService {
     // Hash password
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
 
-    // Create user with default role 'user' if not specified
+    // Create user with default role 'bartender' if not specified
     const userModel = new UserModel({
       email: registerDto.email,
       password: hashedPassword,
       name: registerDto.name,
-      role: registerDto.role || 'user',
+      role: registerDto.role || 'bartender',
     });
 
     await this.dynamoDBService.put(TABLE_NAMES.USERS, userModel.toDynamoDBItem());

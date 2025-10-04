@@ -37,7 +37,7 @@ export class TicketController {
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @Roles('admin', 'bartender', 'cashier')
+  @Roles('admin', 'bartender')
   async create(
     @Body() createTicketDto: CreateTicketDto,
     @Request() req: any
@@ -46,7 +46,7 @@ export class TicketController {
   }
 
   @Get('search')
-  @Roles('admin', 'manager', 'cashier')
+  @Roles('admin', 'bartender')
   async searchTickets(
     @Query() query: TicketQueryDto,
     @Request() req: any
@@ -59,13 +59,13 @@ export class TicketController {
   }
 
   @Get('stats')
-  @Roles('admin', 'manager')
+  @Roles('admin')
   async getStats(@Query() query: TicketStatsQueryDto): Promise<ITicketStats> {
     return this.ticketService.getStats(query);
   }
 
   @Get(':id')
-  @Roles('admin', 'manager', 'cashier')
+  @Roles('admin', 'bartender')
   async findOne(
     @Param('id') id: string,
     @Request() req: any
@@ -81,7 +81,7 @@ export class TicketController {
   }
 
   @Patch(':id')
-  @Roles('admin', 'bartender', 'cashier')
+  @Roles('admin', 'bartender')
   async update(
     @Param('id') id: string,
     @Body() updateData: any,
@@ -97,13 +97,10 @@ export class TicketController {
     
     // Determinar tipo de operación por el contenido del body
     if (updateData.paymentMethod && updateData.paidAmount) {
-      // Procesar pago - Solo cashiers y admins
-      if (req.user.role === 'bartender') {
-        throw new BadRequestException('Access denied. Only cashiers can process payments.');
-      }
+      // Procesar pago - Todos los roles pueden procesar pagos
       return this.ticketService.processPayment(id, updateData);
     } else if (updateData.productId && updateData.quantity) {
-      // Agregar item - Bartenders y cashiers
+      // Agregar item - Todos los roles
       return this.ticketService.addItem(id, updateData);
     } else {
       // Actualizar ticket - Todos los roles autorizados
@@ -113,7 +110,7 @@ export class TicketController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  @Roles('admin', 'bartender', 'cashier')
+  @Roles('admin', 'bartender')
   async delete(
     @Param('id') id: string,
     @Query('itemId') itemId?: string,
@@ -139,7 +136,7 @@ export class TicketController {
   // ===== TICKET PRINTING =====
 
   @Get(':id/print')
-  @Roles('admin', 'manager', 'cashier')
+  @Roles('admin', 'bartender')
   async getPrintFormat(
     @Param('id') id: string,
     @Request() req: any
@@ -156,7 +153,7 @@ export class TicketController {
   }
 
   @Patch(':id/print')
-  @Roles('admin', 'bartender', 'cashier')
+  @Roles('admin', 'bartender')
   async markAsPrinted(
     @Param('id') id: string,
     @Request() req: any

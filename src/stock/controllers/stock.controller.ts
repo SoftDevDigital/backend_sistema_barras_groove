@@ -60,7 +60,7 @@ export class StockController {
 
   @Post('move')
   @HttpCode(HttpStatus.CREATED)
-  @Roles('admin', 'manager')
+  @Roles('admin', 'bartender')
   async createStockMovement(
     @Body() movementData: CreateStockMovementDto,
     @Request() req: any
@@ -69,7 +69,7 @@ export class StockController {
   }
 
   @Get('search')
-  @Roles('admin', 'manager', 'bartender', 'cashier')
+  @Roles('admin', 'bartender')
   async searchStock(
     @Query('type') type?: string,
     @Query('barId') barId?: string,
@@ -128,7 +128,7 @@ export class StockController {
   }
 
   @Get('info')
-  @Roles('admin', 'manager', 'bartender', 'cashier')
+  @Roles('admin', 'bartender')
   async getStockInfo(
     @Query('type') type: string,
     @Query('id') id?: string,
@@ -200,7 +200,7 @@ export class StockController {
   }
 
   @Patch(':id')
-  @Roles('admin', 'manager')
+  @Roles('admin', 'bartender')
   async updateStock(
     @Param('id') id: string,
     @Body() updateData: any,

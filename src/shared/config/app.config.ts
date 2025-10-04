@@ -25,15 +25,15 @@ export const appConfig = {
   
   // JWT
   jwt: {
-    secret: getEnvVar('JWT_SECRET', 'your-super-secret-jwt-key-change-in-production'),
+    secret: getEnvVar('JWT_SECRET', 'super-secret-jwt-key-for-bar-system-2024-production-ready'),
     expiresIn: getEnvVar('JWT_EXPIRES_IN', '24h'),
   },
   
   // AWS
   aws: {
     region: getEnvVar('AWS_REGION', 'us-east-1'),
-    accessKeyId: getEnvVar('AWS_ACCESS_KEY_ID', ''),
-    secretAccessKey: getEnvVar('AWS_SECRET_ACCESS_KEY', ''),
+    accessKeyId: getEnvVar('AWS_ACCESS_KEY_ID', 'your_access_key_here'),
+    secretAccessKey: getEnvVar('AWS_SECRET_ACCESS_KEY', 'your_secret_key_here'),
   },
   
   // DynamoDB

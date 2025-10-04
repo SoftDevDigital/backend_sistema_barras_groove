@@ -21,14 +21,14 @@ export class RegisterDto {
   @MinLength(2)
   name: string;
 
-  @IsEnum(['user'])
+  @IsEnum(['admin', 'bartender'])
   @IsOptional()
-  role?: 'user'; // Por defecto será 'user'
+  role?: 'admin' | 'bartender'; // Por defecto será 'bartender'
 }
 
 export class UpdateUserRoleDto {
-  @IsEnum(['user', 'admin', 'bartender', 'manager', 'cashier'])
-  role: 'user' | 'admin' | 'bartender' | 'manager' | 'cashier';
+  @IsEnum(['admin', 'bartender'])
+  role: 'admin' | 'bartender';
 }
 
 export class UserQueryDto {
@@ -36,7 +36,7 @@ export class UserQueryDto {
   @IsOptional()
   search?: string;
 
-  @IsEnum(['user', 'admin', 'bartender', 'manager', 'cashier'])
+  @IsEnum(['admin', 'bartender'])
   @IsOptional()
-  role?: 'user' | 'admin' | 'bartender' | 'manager' | 'cashier';
+  role?: 'admin' | 'bartender';
 }

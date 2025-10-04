@@ -5,7 +5,7 @@ export class UserModel extends BaseModel implements IUser {
   email: string;
   password: string;
   name: string;
-  role: 'user' | 'admin' | 'bartender' | 'manager' | 'cashier';
+  role: 'admin' | 'bartender';
 
   constructor(data?: IUserCreate) {
     super();
@@ -14,12 +14,12 @@ export class UserModel extends BaseModel implements IUser {
       this.email = data.email;
       this.password = data.password;
       this.name = data.name;
-      this.role = data.role || 'user';
+      this.role = data.role || 'bartender';
     } else {
       this.email = '';
       this.password = '';
       this.name = '';
-      this.role = 'user';
+      this.role = 'bartender';
     }
   }
 

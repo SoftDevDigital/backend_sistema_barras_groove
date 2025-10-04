@@ -32,9 +32,12 @@ const getDynamoDBConfig = () => {
   }
 
   // Solo agregar endpoint si está configurado (para desarrollo local)
-  if (endpoint) {
+  if (endpoint && endpoint !== 'http://localhost:8000') {
     config.endpoint = endpoint;
     console.log('🔧 Usando DynamoDB Local');
+  } else if (endpoint === 'http://localhost:8000') {
+    console.log('⚠️  DynamoDB Local configurado pero no disponible, usando AWS Cloud');
+    // No agregar endpoint para usar AWS Cloud
   }
 
   return config;

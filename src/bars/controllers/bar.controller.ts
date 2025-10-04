@@ -31,25 +31,25 @@ export class BarController {
   }
 
   @Get()
-  @Roles('admin', 'bar_user')
+  @Roles('admin', 'bartender')
   async findAll(@Query() query: BarQueryDto): Promise<IBar[]> {
     return this.barService.findAll(query);
   }
 
   @Get('event/:eventId')
-  @Roles('admin', 'bar_user')
+  @Roles('admin', 'bartender')
   async findByEvent(@Param('eventId') eventId: string): Promise<IBar[]> {
     return this.barService.findByEvent(eventId);
   }
 
   @Get('status/:status')
-  @Roles('admin', 'bar_user')
+  @Roles('admin', 'bartender')
   async findByStatus(@Param('status') status: 'active' | 'closed'): Promise<IBar[]> {
     return this.barService.findByStatus(status);
   }
 
   @Get(':id')
-  @Roles('admin', 'bar_user')
+  @Roles('admin', 'bartender')
   async findOne(@Param('id') id: string): Promise<IBar> {
     return this.barService.findOne(id);
   }

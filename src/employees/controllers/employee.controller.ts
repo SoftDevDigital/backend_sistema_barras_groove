@@ -46,7 +46,7 @@ export class EmployeeController {
   }
 
   @Get(':id')
-  @Roles('admin', 'bartender', 'manager', 'cashier')
+  @Roles('admin', 'bartender')
   async findOne(@Param('id') id: string): Promise<IEmployee> {
     return this.employeeService.findOne(id);
   }
@@ -70,7 +70,7 @@ export class EmployeeController {
   // ===== RUTAS SIMPLIFICADAS AL MÁXIMO =====
 
   @Get('search')
-  @Roles('admin', 'bartender', 'manager', 'cashier')
+  @Roles('admin', 'bartender')
   async searchEmployees(
     @Query('role') role?: string,
     @Query('eventId') eventId?: string,
@@ -107,8 +107,8 @@ export class EmployeeController {
     }
     
     // Búsqueda normal de empleados por rol
-    if (role && ['bartender', 'manager', 'cashier'].includes(role)) {
-      return this.employeeService.findAll({ role: role as 'bartender' | 'manager' | 'cashier' });
+    if (role && ['bartender'].includes(role)) {
+      return this.employeeService.findAll({ role: role as 'bartender' });
     }
     
     // Sin parámetros = listar todos

@@ -31,31 +31,31 @@ export class EventController {
   }
 
   @Get()
-  @Roles('admin', 'bar_user')
+  @Roles('admin', 'bartender')
   async findAll(@Query() query: EventQueryDto): Promise<IEvent[]> {
     return this.eventService.findAll(query);
   }
 
   @Get('active')
-  @Roles('admin', 'bar_user')
+  @Roles('admin', 'bartender')
   async getActiveEvents(): Promise<IEvent[]> {
     return this.eventService.getActiveEvents();
   }
 
   @Get('closed')
-  @Roles('admin', 'bar_user')
+  @Roles('admin', 'bartender')
   async getClosedEvents(): Promise<IEvent[]> {
     return this.eventService.getClosedEvents();
   }
 
   @Get('status/:status')
-  @Roles('admin', 'bar_user')
+  @Roles('admin', 'bartender')
   async findByStatus(@Param('status') status: 'active' | 'closed'): Promise<IEvent[]> {
     return this.eventService.findByStatus(status);
   }
 
   @Get(':id')
-  @Roles('admin', 'bar_user')
+  @Roles('admin', 'bartender')
   async findOne(@Param('id') id: string): Promise<IEvent> {
     return this.eventService.findOne(id);
   }

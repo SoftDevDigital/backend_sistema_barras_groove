@@ -31,7 +31,7 @@ export class ProductController {
   }
 
   @Get()
-  @Roles('admin', 'bar_user') // Ambos pueden consultar
+  @Roles('admin', 'bartender') // Ambos pueden consultar
   async findAll(@Query() query: ProductQueryDto): Promise<IProduct[] | IProductKey[]> {
     // Si se solicita solo teclas rápidas (contraparte: keys_only=false o sin parámetro = productos completos)
     if (query.keys_only === 'true') {
@@ -48,7 +48,7 @@ export class ProductController {
   }
 
   @Get(':id')
-  @Roles('admin', 'bar_user') // Ambos pueden consultar un producto específico
+  @Roles('admin', 'bartender') // Ambos pueden consultar un producto específico
   async findOne(@Param('id') id: string): Promise<IProduct> {
     return this.productService.findOne(id);
   }
