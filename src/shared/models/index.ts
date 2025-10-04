@@ -5,4 +5,5 @@ export * from './bar.model';
 export * from './product.model';
 export * from './employee.model';
 export * from './ticket.model';
+export * from './stock.model';
 export * from './business-config.model';

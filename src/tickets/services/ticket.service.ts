@@ -23,6 +23,7 @@ import { EmployeeService } from '../../employees/services/employee.service';
 import { BarService } from '../../bars/services/bar.service';
 import { EventService } from '../../events/services/event.service';
 import { BusinessConfigService } from '../../shared/services/business-config.service';
+import { StockService } from '../../stock/services/stock.service';
 
 @Injectable()
 export class TicketService {
@@ -35,6 +36,7 @@ export class TicketService {
     private readonly barService: BarService,
     private readonly eventService: EventService,
     private readonly businessConfigService: BusinessConfigService,
+    private readonly stockService: StockService,
   ) {}
 
   // ===== TICKETS =====
@@ -612,13 +614,24 @@ export class TicketService {
         }
       );
 
-      // Actualizar stock de productos
+      // Actualizar stock de productos (sistema legacy)
       for (const item of ticket.items) {
         await this.productService.updateStock(item.productId, {
           quantity: item.quantity,
           type: 'subtract',
           reason: `Ticket ${ticketId} - Sale`,
         });
+      }
+
+      // Actualizar stock de barra (sistema nuevo)
+      try {
+        await this.stockService.processSaleStock(ticketId, ticket.items.map(item => ({
+          productId: item.productId,
+          quantity: item.quantity,
+        })), ticket.barId);
+      } catch (stockError) {
+        this.logger.warn(`Error processing stock for ticket ${ticketId}:`, stockError.message, 'TicketService.processPayment');
+        // No lanzar error para no interrumpir el pago, pero loggear el problema
       }
 
       return this.findOne(ticketId);

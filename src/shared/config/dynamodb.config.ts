@@ -74,6 +74,11 @@ export const TABLE_NAMES = {
   TICKET_ITEMS: `${tablePrefix}_ticket_items`,
   EXPENSES: `${tablePrefix}_expenses`,
   STOCK: `${tablePrefix}_stock`,
+  STOCK_MOVEMENTS: `${tablePrefix}_stock_movements`,
+  BAR_STOCK: `${tablePrefix}_bar_stock`,
+  GLOBAL_STOCK: `${tablePrefix}_global_stock`,
+  STOCK_ALERTS: `${tablePrefix}_stock_alerts`,
+  STOCK_TRANSFERS: `${tablePrefix}_stock_transfers`,
   USERS: `${tablePrefix}_users`,
   BUSINESS_CONFIG: `${tablePrefix}_business_config`,
 } as const;
@@ -82,4 +87,5 @@ export const TABLE_NAMES = {
 export const GSI_CONFIG = {
   GSI1: 'GSI1',
   GSI2: 'GSI2',
+  GSI3: 'GSI3',
 } as const;

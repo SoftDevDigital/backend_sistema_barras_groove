@@ -18,7 +18,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "create-tables": "ts-node -r dotenv/config scripts/create-tables.ts"
+    "create-tables": "ts-node -r dotenv/config scripts/create-tables.ts",
+    "init-stock": "ts-node -r dotenv/config scripts/init-stock-system.ts"
   },
   "dependencies": {
     "@aws-sdk/client-dynamodb": "^3.901.0",
