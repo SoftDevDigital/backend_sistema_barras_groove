@@ -3,8 +3,8 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { DynamoDBService } from '../../shared/services/dynamodb.service';
 import { UserModel } from '../../shared/models/user.model';
-import { LoginDto, RegisterDto } from '../dto/auth.dto';
-import { IAuthResponse } from '../../shared/interfaces/user.interface';
+import { LoginDto, RegisterDto, UpdateUserRoleDto, UserQueryDto } from '../dto/auth.dto';
+import { IAuthResponse, IUser } from '../../shared/interfaces/user.interface';
 import { TABLE_NAMES } from '../../shared/config/dynamodb.config';
 
 @Injectable()
@@ -33,12 +33,12 @@ export class AuthService {
     // Hash password
     const hashedPassword = await bcrypt.hash(registerDto.password, 10);
 
-    // Create user
+    // Create user with default role 'user' if not specified
     const userModel = new UserModel({
       email: registerDto.email,
       password: hashedPassword,
       name: registerDto.name,
-      role: registerDto.role,
+      role: registerDto.role || 'user',
     });
 
     await this.dynamoDBService.put(TABLE_NAMES.USERS, userModel.toDynamoDBItem());
@@ -128,5 +128,150 @@ export class AuthService {
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
+  }
+
+  // ===== GESTIÓN DE USUARIOS (Solo Admin) =====
+
+  async findAllUsers(query: UserQueryDto = {}): Promise<Omit<IUser, 'password'>[]> {
+    try {
+      let items: any[] = [];
+
+      if (query.role) {
+        // Buscar por rol usando GSI1
+        items = await this.dynamoDBService.query(
+          TABLE_NAMES.USERS,
+          'GSI1PK = :gsi1pk',
+          { ':gsi1pk': `ROLE#${query.role}` },
+          undefined,
+          'GSI1'
+        );
+      } else if (query.search) {
+        // Buscar por nombre o email usando scan
+        items = await this.dynamoDBService.scan(
+          TABLE_NAMES.USERS,
+          'contains(name, :search) OR contains(email, :search)',
+          { ':search': query.search }
+        );
+      } else {
+        // Obtener todos los usuarios
+        items = await this.dynamoDBService.scan(TABLE_NAMES.USERS);
+      }
+
+      return items.map(item => {
+        const { password, ...userWithoutPassword } = item;
+        return userWithoutPassword as Omit<IUser, 'password'>;
+      });
+    } catch (error) {
+      console.error('Error finding users:', error);
+      throw new BadRequestException('Failed to retrieve users. Please try again.');
+    }
+  }
+
+  async findUserById(id: string): Promise<Omit<IUser, 'password'> | null> {
+    try {
+      if (!id) {
+        throw new BadRequestException('User ID is required');
+      }
+
+      // Buscar por ID usando scan ya que el PK/SK usa email
+      const items = await this.dynamoDBService.scan(
+        TABLE_NAMES.USERS,
+        'id = :id',
+        { ':id': id }
+      );
+      
+      const item = items.length > 0 ? items[0] : null;
+      
+      if (!item) {
+        return null;
+      }
+
+      const { password, ...userWithoutPassword } = item;
+      return userWithoutPassword as Omit<IUser, 'password'>;
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error finding user:', error);
+      throw new BadRequestException('Failed to retrieve user. Please try again.');
+    }
+  }
+
+  async updateUserRole(userId: string, updateRoleDto: UpdateUserRoleDto): Promise<Omit<IUser, 'password'>> {
+    try {
+      if (!userId) {
+        throw new BadRequestException('User ID is required');
+      }
+
+      // Verificar que el usuario existe
+      const existingUser = await this.findUserById(userId);
+
+      if (!existingUser) {
+        throw new BadRequestException('User not found');
+      }
+
+      // Preparar datos de actualización
+      const updateData = {
+        role: updateRoleDto.role,
+        updatedAt: new Date().toISOString(),
+        GSI1PK: `ROLE#${updateRoleDto.role}`,
+      };
+
+      await this.dynamoDBService.update(
+        TABLE_NAMES.USERS,
+        { PK: `USER#${existingUser.email}`, SK: `USER#${existingUser.email}` },
+        'SET #role = :role, #updatedAt = :updatedAt, #GSI1PK = :GSI1PK',
+        {
+          ':role': updateRoleDto.role,
+          ':updatedAt': updateData.updatedAt,
+          ':GSI1PK': updateData.GSI1PK,
+        },
+        {
+          '#role': 'role',
+          '#updatedAt': 'updatedAt',
+          '#GSI1PK': 'GSI1PK',
+        }
+      );
+
+      // Retornar usuario actualizado
+      const updatedUser = await this.findUserById(userId);
+      if (!updatedUser) {
+        throw new BadRequestException('Failed to retrieve updated user');
+      }
+      
+      return updatedUser;
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error updating user role:', error);
+      throw new BadRequestException('Failed to update user role. Please try again.');
+    }
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    try {
+      if (!userId) {
+        throw new BadRequestException('User ID is required');
+      }
+
+      // Verificar que el usuario existe
+      const existingUser = await this.findUserById(userId);
+
+      if (!existingUser) {
+        throw new BadRequestException('User not found');
+      }
+
+      await this.dynamoDBService.delete(TABLE_NAMES.USERS, {
+        PK: `USER#${existingUser.email}`,
+        SK: `USER#${existingUser.email}`,
+      });
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      console.error('Error deleting user:', error);
+      throw new BadRequestException('Failed to delete user. Please try again.');
+    }
   }
 }

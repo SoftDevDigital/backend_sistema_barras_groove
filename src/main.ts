@@ -1,5 +1,5 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, BadRequestException } from '@nestjs/common';
 import { AppModule } from './app.module';
 import { appConfig, validateConfig } from './shared/config/app.config';
 import { HttpExceptionFilter } from './shared/filters/http-exception.filter';
@@ -87,11 +87,26 @@ async function bootstrap() {
     credentials: true,
   });
   
-  // Configurar validación global
+  // Configurar validación global con mensajes específicos
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
     forbidNonWhitelisted: true,
     transform: true,
+    transformOptions: {
+      enableImplicitConversion: true,
+    },
+    exceptionFactory: (errors) => {
+      const result = errors.map((error) => ({
+        property: error.property,
+        value: error.value,
+        constraints: error.constraints,
+      }));
+      return new BadRequestException({
+        message: 'Validation failed',
+        errors: result,
+        statusCode: 400,
+      });
+    },
   }));
   
   // Configurar filtro global de excepciones

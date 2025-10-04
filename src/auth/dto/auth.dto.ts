@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, IsEnum } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsEnum, IsOptional } from 'class-validator';
 
 export class LoginDto {
   @IsEmail()
@@ -21,6 +21,22 @@ export class RegisterDto {
   @MinLength(2)
   name: string;
 
-  @IsEnum(['admin', 'bar_user'])
-  role: 'admin' | 'bar_user';
+  @IsEnum(['user'])
+  @IsOptional()
+  role?: 'user'; // Por defecto será 'user'
+}
+
+export class UpdateUserRoleDto {
+  @IsEnum(['user', 'admin', 'bartender', 'manager', 'cashier'])
+  role: 'user' | 'admin' | 'bartender' | 'manager' | 'cashier';
+}
+
+export class UserQueryDto {
+  @IsString()
+  @IsOptional()
+  search?: string;
+
+  @IsEnum(['user', 'admin', 'bartender', 'manager', 'cashier'])
+  @IsOptional()
+  role?: 'user' | 'admin' | 'bartender' | 'manager' | 'cashier';
 }

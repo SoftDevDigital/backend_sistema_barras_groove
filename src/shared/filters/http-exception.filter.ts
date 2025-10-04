@@ -23,24 +23,41 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const request = ctx.getRequest<Request>();
 
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
-    let message = 'Internal server error';
+    let message: string | object = 'Internal server error';
     let shouldLogAsError = true;
 
     try {
       if (exception instanceof HttpException) {
         status = exception.getStatus();
-        message = exception.message;
-
-        // Determinar si debe loggearse como error o warning basado en el tipo
+        
+        // Manejar diferentes tipos de errores HTTP
         if (exception instanceof BadRequestException) {
           shouldLogAsError = false; // Errores de validación son esperados
+          const response = exception.getResponse();
+          if (typeof response === 'object' && response !== null) {
+            message = response['message'] || exception.message;
+            // Si hay errores de validación específicos, incluirlos
+            if (response['errors']) {
+              message = {
+                message: message,
+                errors: response['errors']
+              };
+            }
+          } else {
+            message = exception.message;
+          }
         } else if (exception instanceof NotFoundException) {
           shouldLogAsError = false; // Recursos no encontrados son esperados
+          message = exception.message;
         } else if (exception instanceof UnauthorizedException || 
                    exception instanceof ForbiddenException) {
           shouldLogAsError = false; // Errores de autenticación son esperados
+          message = exception.message;
         } else if (exception instanceof ConflictException) {
           shouldLogAsError = false; // Conflictos son esperados
+          message = exception.message;
+        } else {
+          message = exception.message;
         }
       } else if (exception instanceof Error) {
         message = exception.message;
@@ -62,7 +79,8 @@ export class HttpExceptionFilter implements ExceptionFilter {
       };
 
       // Usar el nuevo logger para API calls
-      this.logger.apiCall(request.method, request.url, status, message);
+      const logMessage = typeof message === 'string' ? message : JSON.stringify(message);
+      this.logger.apiCall(request.method, request.url, status, logMessage);
 
       // Asegurar que la respuesta se envíe correctamente
       if (!response.headersSent) {

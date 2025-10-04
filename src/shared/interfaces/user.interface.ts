@@ -3,7 +3,7 @@ export interface IUser {
   email: string;
   password: string;
   name: string;
-  role: 'admin' | 'bar_user';
+  role: 'user' | 'admin' | 'bartender' | 'manager' | 'cashier';
   createdAt: string;
   updatedAt: string;
 }
@@ -12,7 +12,12 @@ export interface IUserCreate {
   email: string;
   password: string;
   name: string;
-  role: 'admin' | 'bar_user';
+  role?: 'user'; // Por defecto, los usuarios se registran como 'user'
+}
+
+export interface IUserUpdate {
+  name?: string;
+  role?: 'user' | 'admin' | 'bartender' | 'manager' | 'cashier';
 }
 
 export interface IUserLogin {

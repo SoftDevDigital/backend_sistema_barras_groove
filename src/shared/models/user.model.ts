@@ -5,7 +5,7 @@ export class UserModel extends BaseModel implements IUser {
   email: string;
   password: string;
   name: string;
-  role: 'admin' | 'bar_user';
+  role: 'user' | 'admin' | 'bartender' | 'manager' | 'cashier';
 
   constructor(data?: IUserCreate) {
     super();
@@ -14,12 +14,12 @@ export class UserModel extends BaseModel implements IUser {
       this.email = data.email;
       this.password = data.password;
       this.name = data.name;
-      this.role = data.role;
+      this.role = data.role || 'user';
     } else {
       this.email = '';
       this.password = '';
       this.name = '';
-      this.role = 'bar_user';
+      this.role = 'user';
     }
   }
 
@@ -27,7 +27,7 @@ export class UserModel extends BaseModel implements IUser {
     return {
       PK: `USER#${this.email}`,
       SK: `USER#${this.email}`,
-      GSI1PK: `USER#${this.role}`,
+      GSI1PK: `ROLE#${this.role}`,
       GSI1SK: this.email,
       ...super.toDynamoDBItem(),
       email: this.email,

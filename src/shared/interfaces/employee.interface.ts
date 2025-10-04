@@ -30,6 +30,8 @@ export interface IEmployeeAssignment {
   shift: 'morning' | 'afternoon' | 'night';
   assignedAt: string;
   status: 'active' | 'completed';
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface IEmployeeAssignmentCreate {

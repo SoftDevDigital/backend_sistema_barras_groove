@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { EventsModule } from './events/events.module';
 import { BarsModule } from './bars/bars.module';
 import { ProductsModule } from './products/products.module';
+import { EmployeesModule } from './employees/employees.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { ProductsModule } from './products/products.module';
     EventsModule,
     BarsModule,
     ProductsModule,
+    EmployeesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

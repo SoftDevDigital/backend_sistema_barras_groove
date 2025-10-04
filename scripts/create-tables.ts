@@ -102,24 +102,64 @@ const tables = [
   {
     TableName: TABLE_NAMES.EMPLOYEES,
     KeySchema: [
-      { AttributeName: 'PK', KeyType: 'HASH' },
-      { AttributeName: 'SK', KeyType: 'RANGE' },
+      { AttributeName: 'id', KeyType: 'HASH' },
     ],
     AttributeDefinitions: [
-      { AttributeName: 'PK', AttributeType: 'S' },
-      { AttributeName: 'SK', AttributeType: 'S' },
+      { AttributeName: 'id', AttributeType: 'S' },
+      { AttributeName: 'GSI1PK', AttributeType: 'S' },
+      { AttributeName: 'GSI1SK', AttributeType: 'S' },
+      { AttributeName: 'GSI2PK', AttributeType: 'S' },
+      { AttributeName: 'GSI2SK', AttributeType: 'S' },
+    ],
+    GlobalSecondaryIndexes: [
+      {
+        IndexName: 'GSI1',
+        KeySchema: [
+          { AttributeName: 'GSI1PK', KeyType: 'HASH' },
+          { AttributeName: 'GSI1SK', KeyType: 'RANGE' },
+        ],
+        Projection: { ProjectionType: 'ALL' },
+      },
+      {
+        IndexName: 'GSI2',
+        KeySchema: [
+          { AttributeName: 'GSI2PK', KeyType: 'HASH' },
+          { AttributeName: 'GSI2SK', KeyType: 'RANGE' },
+        ],
+        Projection: { ProjectionType: 'ALL' },
+      },
     ],
     BillingMode: 'PAY_PER_REQUEST',
   },
   {
     TableName: TABLE_NAMES.EMPLOYEE_ASSIGNMENTS,
     KeySchema: [
-      { AttributeName: 'PK', KeyType: 'HASH' },
-      { AttributeName: 'SK', KeyType: 'RANGE' },
+      { AttributeName: 'id', KeyType: 'HASH' },
     ],
     AttributeDefinitions: [
-      { AttributeName: 'PK', AttributeType: 'S' },
-      { AttributeName: 'SK', AttributeType: 'S' },
+      { AttributeName: 'id', AttributeType: 'S' },
+      { AttributeName: 'GSI1PK', AttributeType: 'S' },
+      { AttributeName: 'GSI1SK', AttributeType: 'S' },
+      { AttributeName: 'GSI2PK', AttributeType: 'S' },
+      { AttributeName: 'GSI2SK', AttributeType: 'S' },
+    ],
+    GlobalSecondaryIndexes: [
+      {
+        IndexName: 'GSI1',
+        KeySchema: [
+          { AttributeName: 'GSI1PK', KeyType: 'HASH' },
+          { AttributeName: 'GSI1SK', KeyType: 'RANGE' },
+        ],
+        Projection: { ProjectionType: 'ALL' },
+      },
+      {
+        IndexName: 'GSI2',
+        KeySchema: [
+          { AttributeName: 'GSI2PK', KeyType: 'HASH' },
+          { AttributeName: 'GSI2SK', KeyType: 'RANGE' },
+        ],
+        Projection: { ProjectionType: 'ALL' },
+      },
     ],
     BillingMode: 'PAY_PER_REQUEST',
   },
