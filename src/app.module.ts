@@ -8,6 +8,7 @@ import { EventsModule } from './events/events.module';
 import { BarsModule } from './bars/bars.module';
 import { ProductsModule } from './products/products.module';
 import { EmployeesModule } from './employees/employees.module';
+import { TicketsModule } from './tickets/tickets.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { EmployeesModule } from './employees/employees.module';
     BarsModule,
     ProductsModule,
     EmployeesModule,
+    TicketsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

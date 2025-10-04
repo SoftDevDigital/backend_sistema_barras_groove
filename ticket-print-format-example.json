@@ -1,0 +1,75 @@
+{
+  "header": {
+    "businessName": "GROOVE BAR SYSTEM",
+    "businessAddress": "Av. Principal 123, Ciudad",
+    "businessPhone": "+1 (555) 123-4567",
+    "businessTaxId": "RUC: 12345678901",
+    "businessEmail": "info@groovebar.com",
+    "businessLogo": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=="
+  },
+  "ticket": {
+    "ticketNumber": "TKT-12345678",
+    "employeeName": "Juan Pérez",
+    "barName": "Bar Principal",
+    "eventName": "Fiesta de Año Nuevo",
+    "date": "01/01/2024",
+    "time": "22:30",
+    "currency": "USD"
+  },
+  "items": [
+    {
+      "name": "Cerveza Corona",
+      "quantity": 2,
+      "unitPrice": 3.50,
+      "subtotal": 7.00,
+      "taxRate": 10,
+      "tax": 0.70
+    },
+    {
+      "name": "Whisky Johnnie Walker",
+      "quantity": 1,
+      "unitPrice": 12.00,
+      "subtotal": 12.00,
+      "taxRate": 10,
+      "tax": 1.20
+    },
+    {
+      "name": "Coca Cola",
+      "quantity": 3,
+      "unitPrice": 1.50,
+      "subtotal": 4.50,
+      "taxRate": 10,
+      "tax": 0.45
+    },
+    {
+      "name": "Agua Mineral",
+      "quantity": 1,
+      "unitPrice": 1.00,
+      "subtotal": 1.00,
+      "taxRate": 0,
+      "tax": 0.00
+    }
+  ],
+  "totals": {
+    "subtotal": 24.50,
+    "tax": 2.35,
+    "total": 26.85,
+    "currency": "USD"
+  },
+  "payment": {
+    "method": "EFECTIVO",
+    "paidAmount": 30.00,
+    "changeAmount": 3.15,
+    "currency": "USD"
+  },
+  "footer": {
+    "thankYouMessage": "¡Gracias por su compra!",
+    "businessWebsite": "www.groovebar.com",
+    "receiptFooter": "Sistema de Barras Groove"
+  },
+  "printerSettings": {
+    "paperWidth": 80,
+    "fontSize": 12,
+    "fontFamily": "monospace"
+  }
+}

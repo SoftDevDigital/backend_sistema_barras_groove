@@ -6,3 +6,4 @@ export * from './employee.interface';
 export * from './ticket.interface';
 export * from './expense.interface';
 export * from './stock.interface';
+export * from './business-config.interface';

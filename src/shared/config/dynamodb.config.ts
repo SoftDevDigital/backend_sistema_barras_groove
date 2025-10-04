@@ -71,9 +71,11 @@ export const TABLE_NAMES = {
   EMPLOYEES: `${tablePrefix}_employees`,
   EMPLOYEE_ASSIGNMENTS: `${tablePrefix}_employee_assignments`,
   TICKETS: `${tablePrefix}_tickets`,
+  TICKET_ITEMS: `${tablePrefix}_ticket_items`,
   EXPENSES: `${tablePrefix}_expenses`,
   STOCK: `${tablePrefix}_stock`,
   USERS: `${tablePrefix}_users`,
+  BUSINESS_CONFIG: `${tablePrefix}_business_config`,
 } as const;
 
 // Configuración de índices GSI

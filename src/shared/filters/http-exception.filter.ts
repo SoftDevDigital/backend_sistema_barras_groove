@@ -25,49 +25,80 @@ export class HttpExceptionFilter implements ExceptionFilter {
     let status = HttpStatus.INTERNAL_SERVER_ERROR;
     let message: string | object = 'Internal server error';
     let shouldLogAsError = true;
+    let errorId = `ERR-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     try {
+      // Log del error con ID único para tracking
+      this.logger.error(`[${errorId}] Exception caught:`, exception instanceof Error ? exception.stack : JSON.stringify(exception), 'HttpExceptionFilter');
+
       if (exception instanceof HttpException) {
         status = exception.getStatus();
         
-        // Manejar diferentes tipos de errores HTTP
+        // Manejar diferentes tipos de errores HTTP con mensajes mejorados
         if (exception instanceof BadRequestException) {
           shouldLogAsError = false; // Errores de validación son esperados
-          const response = exception.getResponse();
-          if (typeof response === 'object' && response !== null) {
-            message = response['message'] || exception.message;
+          const exceptionResponse = exception.getResponse();
+          if (typeof exceptionResponse === 'object' && exceptionResponse !== null) {
+            message = exceptionResponse['message'] || exception.message;
             // Si hay errores de validación específicos, incluirlos
-            if (response['errors']) {
+            if (exceptionResponse['errors']) {
               message = {
                 message: message,
-                errors: response['errors']
+                errors: exceptionResponse['errors'],
+                errorId: errorId
+              };
+            } else {
+              message = {
+                message: message,
+                errorId: errorId
               };
             }
           } else {
-            message = exception.message;
+            message = {
+              message: exception.message,
+              errorId: errorId
+            };
           }
         } else if (exception instanceof NotFoundException) {
           shouldLogAsError = false; // Recursos no encontrados son esperados
-          message = exception.message;
+          message = {
+            message: exception.message,
+            errorId: errorId
+          };
         } else if (exception instanceof UnauthorizedException || 
                    exception instanceof ForbiddenException) {
           shouldLogAsError = false; // Errores de autenticación son esperados
-          message = exception.message;
+          message = {
+            message: exception.message,
+            errorId: errorId
+          };
         } else if (exception instanceof ConflictException) {
           shouldLogAsError = false; // Conflictos son esperados
-          message = exception.message;
+          message = {
+            message: exception.message,
+            errorId: errorId
+          };
         } else {
-          message = exception.message;
+          message = {
+            message: exception.message,
+            errorId: errorId
+          };
         }
       } else if (exception instanceof Error) {
-        message = exception.message;
-        // Solo loggear como error si es realmente inesperado
-        this.logger.error(`Unexpected error: ${exception.message}`, exception.stack, 'HttpExceptionFilter');
+        message = {
+          message: 'An unexpected error occurred. Please try again later.',
+          errorId: errorId,
+          details: process.env.NODE_ENV === 'development' ? exception.message : undefined
+        };
+        // Log completo del error para debugging
+        this.logger.error(`[${errorId}] Unexpected error:`, exception.stack, 'HttpExceptionFilter');
       } else {
         // Error completamente desconocido
-        this.logger.error('Unknown error type:', undefined, 'HttpExceptionFilter');
-        this.logger.error(`Error details: ${JSON.stringify(exception)}`, undefined, 'HttpExceptionFilter');
-        message = 'An unexpected error occurred';
+        message = {
+          message: 'An unexpected error occurred. Please try again later.',
+          errorId: errorId
+        };
+        this.logger.error(`[${errorId}] Unknown error type:`, JSON.stringify(exception), 'HttpExceptionFilter');
       }
 
       const errorResponse = {
@@ -78,24 +109,32 @@ export class HttpExceptionFilter implements ExceptionFilter {
         message: message,
       };
 
-      // Usar el nuevo logger para API calls
+      // Log de la respuesta de error
       const logMessage = typeof message === 'string' ? message : JSON.stringify(message);
-      this.logger.apiCall(request.method, request.url, status, logMessage);
+      this.logger.apiCall(request.method, request.url, status, `[${errorId}] ${logMessage}`);
 
       // Asegurar que la respuesta se envíe correctamente
       if (!response.headersSent) {
         response.status(status).json(errorResponse);
+      } else {
+        this.logger.warn(`[${errorId}] Response already sent, cannot send error response`, 'HttpExceptionFilter');
       }
     } catch (filterError) {
       // Si el filtro de errores falla, enviar respuesta básica
-      this.logger.error('Error in exception filter:', undefined, 'HttpExceptionFilter');
+      this.logger.error(`[${errorId}] Critical error in exception filter:`, filterError instanceof Error ? filterError.stack : JSON.stringify(filterError), 'HttpExceptionFilter');
       
-      if (!response.headersSent) {
-        response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-          statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
-          message: 'Internal server error',
-          timestamp: new Date().toISOString(),
-        });
+      try {
+        if (!response.headersSent) {
+          response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+            statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+            message: 'Internal server error - please contact support',
+            errorId: errorId,
+            timestamp: new Date().toISOString(),
+          });
+        }
+      } catch (responseError) {
+        // Si incluso la respuesta básica falla, solo loggear
+        this.logger.error(`[${errorId}] CRITICAL: Cannot send any response to client:`, responseError instanceof Error ? responseError.stack : JSON.stringify(responseError), 'HttpExceptionFilter');
       }
     }
   }
