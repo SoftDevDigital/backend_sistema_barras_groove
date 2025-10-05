@@ -5,6 +5,7 @@ export interface IProduct {
   price: number;
   cost?: number;
   quickKey: string | null;
+  code: string; // Código de 2-3 letras para bartender (ej: CCC, FER)
   category: string;
   unit: string;
   stock: number;
@@ -23,6 +24,7 @@ export interface IProductCreate {
   price: number;
   cost?: number;
   quickKey?: string;
+  code: string; // Código de 2-3 letras para bartender (ej: CCC, FER)
   category?: string;
   unit?: string;
   stock?: number;
@@ -39,6 +41,7 @@ export interface IProductUpdate {
   price?: number;
   cost?: number;
   quickKey?: string;
+  code?: string; // Código de 2-3 letras para bartender (ej: CCC, FER)
   category?: string;
   unit?: string;
   stock?: number;
@@ -54,6 +57,7 @@ export interface IProductKey {
   productName: string;
   price: number;
   quickKey: string;
+  code: string; // Código de 2-3 letras para bartender
   stock: number;
   available: boolean;
 }

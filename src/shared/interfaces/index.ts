@@ -8,3 +8,4 @@ export * from './expense.interface';
 export * from './stock.interface';
 export * from './business-config.interface';
 export * from './admin.interface';
+export * from './cart.interface';

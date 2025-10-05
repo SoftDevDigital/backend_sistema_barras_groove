@@ -7,6 +7,7 @@ export class ProductModel extends BaseModel implements IProduct {
   public price: number;
   public cost?: number;
   public quickKey: string | null;
+  public code: string; // Código de 2-3 letras para bartender
   public category: string;
   public unit: string;
   public stock: number;
@@ -24,6 +25,7 @@ export class ProductModel extends BaseModel implements IProduct {
     this.price = data.price;
     this.cost = data.cost;
     this.quickKey = data.quickKey || null;
+    this.code = data.code; // Código requerido para bartender
     this.category = data.category || 'General';
     this.unit = data.unit || 'unidad';
     this.stock = data.stock || 0;
@@ -53,6 +55,7 @@ export class ProductModel extends BaseModel implements IProduct {
       price: this.price,
       cost: this.cost,
       quickKey: this.quickKey,
+      code: this.code,
       category: this.category,
       unit: this.unit,
       stock: this.stock,
@@ -73,6 +76,7 @@ export class ProductModel extends BaseModel implements IProduct {
       price: item.price,
       cost: item.cost,
       quickKey: item.quickKey || null,
+      code: item.code || '',
       category: item.category || 'General',
       unit: item.unit || 'unidad',
       stock: item.stock || 0,
@@ -104,6 +108,9 @@ export class ProductModel extends BaseModel implements IProduct {
     }
     if (updateData.quickKey !== undefined) {
       this.quickKey = updateData.quickKey;
+    }
+    if (updateData.code !== undefined) {
+      this.code = updateData.code;
     }
     if (updateData.category !== undefined) {
       this.category = updateData.category;

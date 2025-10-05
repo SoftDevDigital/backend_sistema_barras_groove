@@ -379,6 +379,7 @@ export class ProductService {
           productName: product.name,
           price: product.price,
           quickKey: product.quickKey!,
+          code: product.code,
           stock: product.stock,
           available: product.available,
         }));

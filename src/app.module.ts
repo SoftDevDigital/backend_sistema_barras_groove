@@ -12,6 +12,7 @@ import { TicketsModule } from './tickets/tickets.module';
 import { StockModule } from './stock/stock.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { AdminModule } from './admin/admin.module';
+import { CartModule } from './cart/cart.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { AdminModule } from './admin/admin.module';
     StockModule,
     ExpensesModule,
     AdminModule,
+    CartModule,
   ],
   controllers: [AppController],
   providers: [AppService],

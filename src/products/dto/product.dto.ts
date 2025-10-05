@@ -28,6 +28,11 @@ export class CreateProductDto {
   @Matches(/^[A-Z0-9]*$/, { message: 'Quick key can only contain uppercase letters and numbers' })
   quickKey?: string;
 
+  @IsString()
+  @MaxLength(3, { message: 'Code must be 2-3 characters maximum' })
+  @Matches(/^[A-Z]{2,3}$/, { message: 'Code must be 2-3 uppercase letters only' })
+  code: string;
+
   @IsOptional()
   @IsString()
   @MaxLength(50, { message: 'Category must be less than 50 characters' })
@@ -113,6 +118,12 @@ export class UpdateProductDto {
   @MaxLength(10, { message: 'Quick key must be less than 10 characters' })
   @Matches(/^[A-Z0-9]*$/, { message: 'Quick key can only contain uppercase letters and numbers' })
   quickKey?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(3, { message: 'Code must be 2-3 characters maximum' })
+  @Matches(/^[A-Z]{2,3}$/, { message: 'Code must be 2-3 uppercase letters only' })
+  code?: string;
 
   @IsOptional()
   @IsString()
