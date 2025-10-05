@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException, Logger } from '@nestjs/common';
 import { DynamoDBService } from '../../shared/services/dynamodb.service';
+import { ThermalPrinterService } from '../../shared/services/thermal-printer.service';
 import { TicketModel, TicketItemModel } from '../../shared/models/ticket.model';
 import { 
   CreateTicketDto, 
@@ -31,6 +32,7 @@ export class TicketService {
 
   constructor(
     private readonly dynamoDBService: DynamoDBService,
+    private readonly thermalPrinterService: ThermalPrinterService,
     private readonly productService: ProductService,
     private readonly employeeService: EmployeeService,
     private readonly barService: BarService,
@@ -84,6 +86,45 @@ export class TicketService {
       // Guardar en base de datos
       this.logger.debug(`Saving ticket ${ticketModel.id} to database`, 'TicketService.create');
       await this.dynamoDBService.put(TABLE_NAMES.TICKETS, ticketModel.toDynamoDBItem());
+
+      // Imprimir ticket automáticamente
+      this.logger.debug(`Printing ticket ${ticketModel.id}`, 'TicketService.create');
+      try {
+        const printSuccess = await this.thermalPrinterService.printTicket({
+          id: ticketModel.id,
+          employeeId: ticketModel.employeeId,
+          employeeName: ticketModel.employeeName,
+          barId: ticketModel.barId,
+          barName: ticketModel.barName,
+          eventId: ticketModel.eventId,
+          eventName: ticketModel.eventName,
+          status: ticketModel.status,
+          subtotal: ticketModel.subtotal,
+          totalTax: ticketModel.totalTax,
+          total: ticketModel.total,
+          items: ticketModel.items,
+          notes: ticketModel.notes,
+          printed: ticketModel.printed,
+          createdAt: ticketModel.createdAt,
+          updatedAt: ticketModel.updatedAt,
+          customerName: 'Cliente General',
+          paymentMethod: 'cash',
+          paidAmount: 0,
+          changeAmount: 0,
+        } as ITicket, ticketModel.barId);
+
+        if (printSuccess) {
+          // Marcar como impreso
+          ticketModel.printed = true;
+          await this.dynamoDBService.put(TABLE_NAMES.TICKETS, ticketModel.toDynamoDBItem());
+          this.logger.log(`Ticket ${ticketModel.id} printed successfully`, 'TicketService.create');
+        } else {
+          this.logger.warn(`Failed to print ticket ${ticketModel.id}`, 'TicketService.create');
+        }
+      } catch (printError) {
+        this.logger.error(`Error printing ticket ${ticketModel.id}:`, printError);
+        // No lanzar error, solo registrar
+      }
 
       const duration = Date.now() - startTime;
       this.logger.log(`Ticket ${ticketModel.id} created successfully in ${duration}ms`, 'TicketService.create');
