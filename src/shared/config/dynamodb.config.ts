@@ -84,6 +84,12 @@ export const TABLE_NAMES = {
   STOCK_TRANSFERS: `${tablePrefix}_stock_transfers`,
   USERS: `${tablePrefix}_users`,
   BUSINESS_CONFIG: `${tablePrefix}_business_config`,
+  REPORTS: `${tablePrefix}_reports`,
+  AUDIT_LOGS: `${tablePrefix}_audit_logs`,
+  SYSTEM_SETTINGS: `${tablePrefix}_system_settings`,
+  BACKUPS: `${tablePrefix}_backups`,
+  NOTIFICATIONS: `${tablePrefix}_notifications`,
+  EXPORTS: `${tablePrefix}_exports`,
 } as const;
 
 // Configuración de índices GSI
