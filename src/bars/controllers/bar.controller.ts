@@ -48,6 +48,41 @@ export class BarController {
     return this.barService.findByStatus(status);
   }
 
+  @Get(':id/sales-summary')
+  @Roles('admin')
+  async getBarSalesSummary(@Param('id') id: string): Promise<{
+    bar: IBar;
+    totalSales: number;
+    totalTickets: number;
+    totalRevenue: number;
+    averageTicketValue: number;
+    productsSold: Array<{
+      productId: string;
+      productName: string;
+      quantitySold: number;
+      revenue: number;
+      percentage: number;
+    }>;
+    salesByUser: Array<{
+      userId: string;
+      userName: string;
+      ticketCount: number;
+      totalSales: number;
+    }>;
+    salesByPaymentMethod: {
+      cash: number;
+      card: number;
+      mixed: number;
+    };
+    hourlyDistribution: Array<{
+      hour: string;
+      ticketCount: number;
+      revenue: number;
+    }>;
+  }> {
+    return this.barService.getBarSalesSummary(id);
+  }
+
   @Get(':id')
   @Roles('admin', 'bartender')
   async findOne(@Param('id') id: string): Promise<IBar> {

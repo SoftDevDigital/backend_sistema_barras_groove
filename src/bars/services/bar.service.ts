@@ -3,6 +3,7 @@ import { DynamoDBService } from '../../shared/services/dynamodb.service';
 import { BarModel } from '../../shared/models/bar.model';
 import { CreateBarDto, UpdateBarDto, BarQueryDto } from '../dto/bar.dto';
 import { IBar, IBarCreate } from '../../shared/interfaces/bar.interface';
+import { ITicket } from '../../shared/interfaces/ticket.interface';
 import { TABLE_NAMES } from '../../shared/config/dynamodb.config';
 
 @Injectable()
@@ -305,6 +306,161 @@ export class BarService {
       return filteredItems.length > 0 ? BarModel.fromDynamoDBItem(filteredItems[0]) : null;
     } catch (error) {
       return null;
+    }
+  }
+
+  async getBarSalesSummary(barId: string): Promise<{
+    bar: IBar;
+    totalSales: number;
+    totalTickets: number;
+    totalRevenue: number;
+    averageTicketValue: number;
+    productsSold: Array<{
+      productId: string;
+      productName: string;
+      quantitySold: number;
+      revenue: number;
+      percentage: number;
+    }>;
+    salesByUser: Array<{
+      userId: string;
+      userName: string;
+      ticketCount: number;
+      totalSales: number;
+    }>;
+    salesByPaymentMethod: {
+      cash: number;
+      card: number;
+      mixed: number;
+    };
+    hourlyDistribution: Array<{
+      hour: string;
+      ticketCount: number;
+      revenue: number;
+    }>;
+  }> {
+    try {
+      // Obtener información de la barra
+      const bar = await this.findOne(barId);
+
+      // Obtener todos los tickets de esta barra
+      let ticketItems = [];
+      try {
+        // Intentar usar GSI2 primero
+        ticketItems = await this.dynamoDBService.query(
+          TABLE_NAMES.TICKETS,
+          'GSI2PK = :gsi2pk',
+          { ':gsi2pk': `BAR#${barId}` },
+          undefined,
+          'GSI2'
+        );
+      } catch (error) {
+        // Fallback: usar scan y filtrar por barId
+        console.warn('GSI2 not available for tickets, using scan fallback');
+        const allTickets = await this.dynamoDBService.scan(TABLE_NAMES.TICKETS);
+        ticketItems = allTickets.filter(t => t.barId === barId);
+      }
+
+      // Cargar items de cada ticket
+      const ticketsWithItems: ITicket[] = [];
+      for (const ticketItem of ticketItems) {
+        const items = await this.dynamoDBService.query(
+          TABLE_NAMES.TICKET_ITEMS,
+          'PK = :pk AND begins_with(SK, :sk)',
+          {
+            ':pk': `TICKET#${ticketItem.id}`,
+            ':sk': 'ITEM#'
+          }
+        );
+        
+        ticketsWithItems.push({
+          ...ticketItem,
+          items: items || []
+        } as ITicket);
+      }
+
+      // Calcular totales
+      const totalTickets = ticketsWithItems.length;
+      const totalRevenue = ticketsWithItems.reduce((sum, t) => sum + (t.total || 0), 0);
+      const totalSales = ticketsWithItems.filter(t => t.status === 'paid').length;
+      const averageTicketValue = totalTickets > 0 ? totalRevenue / totalTickets : 0;
+
+      // Productos más vendidos
+      const productsMap = new Map<string, { name: string; quantity: number; revenue: number }>();
+      
+      for (const ticket of ticketsWithItems) {
+        for (const item of ticket.items) {
+          const existing = productsMap.get(item.productId) || { name: item.productName, quantity: 0, revenue: 0 };
+          existing.quantity += item.quantity;
+          existing.revenue += item.total;
+          productsMap.set(item.productId, existing);
+        }
+      }
+
+      const productsSold = Array.from(productsMap.entries()).map(([productId, data]) => ({
+        productId,
+        productName: data.name,
+        quantitySold: data.quantity,
+        revenue: data.revenue,
+        percentage: totalRevenue > 0 ? (data.revenue / totalRevenue) * 100 : 0
+      })).sort((a, b) => b.revenue - a.revenue);
+
+      // Ventas por usuario (bartender)
+      const usersMap = new Map<string, { name: string; count: number; total: number }>();
+      
+      for (const ticket of ticketsWithItems) {
+        const existing = usersMap.get(ticket.userId) || { name: ticket.userName, count: 0, total: 0 };
+        existing.count += 1;
+        existing.total += ticket.total || 0;
+        usersMap.set(ticket.userId, existing);
+      }
+
+      const salesByUser = Array.from(usersMap.entries()).map(([userId, data]) => ({
+        userId,
+        userName: data.name,
+        ticketCount: data.count,
+        totalSales: data.total
+      })).sort((a, b) => b.totalSales - a.totalSales);
+
+      // Ventas por método de pago
+      const salesByPaymentMethod = {
+        cash: ticketsWithItems.filter(t => t.paymentMethod === 'cash').reduce((sum, t) => sum + t.total, 0),
+        card: ticketsWithItems.filter(t => t.paymentMethod === 'card').reduce((sum, t) => sum + t.total, 0),
+        mixed: ticketsWithItems.filter(t => t.paymentMethod === 'mixed').reduce((sum, t) => sum + t.total, 0)
+      };
+
+      // Distribución por hora
+      const hoursMap = new Map<string, { count: number; revenue: number }>();
+      
+      for (const ticket of ticketsWithItems) {
+        const hour = new Date(ticket.createdAt).getHours().toString().padStart(2, '0') + ':00';
+        const existing = hoursMap.get(hour) || { count: 0, revenue: 0 };
+        existing.count += 1;
+        existing.revenue += ticket.total || 0;
+        hoursMap.set(hour, existing);
+      }
+
+      const hourlyDistribution = Array.from(hoursMap.entries()).map(([hour, data]) => ({
+        hour,
+        ticketCount: data.count,
+        revenue: data.revenue
+      })).sort((a, b) => a.hour.localeCompare(b.hour));
+
+      return {
+        bar,
+        totalSales,
+        totalTickets,
+        totalRevenue,
+        averageTicketValue,
+        productsSold,
+        salesByUser,
+        salesByPaymentMethod,
+        hourlyDistribution
+      };
+
+    } catch (error) {
+      console.error('Error getting bar sales summary:', error);
+      throw new BadRequestException('Failed to retrieve bar sales summary. Please try again.');
     }
   }
 }
