@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, IsEnum, IsOptional } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsEnum, IsOptional, Matches } from 'class-validator';
 
 export class LoginDto {
   @IsEmail()
@@ -24,6 +24,19 @@ export class RegisterDto {
   @IsEnum(['admin', 'bartender'])
   @IsOptional()
   role?: 'admin' | 'bartender'; // Por defecto será 'bartender'
+
+  @IsString()
+  @IsOptional()
+  @Matches(/^[0-9]{7,15}$/, { message: 'Document must be 7-15 digits only' })
+  document?: string;
+
+  @IsString()
+  @IsOptional()
+  contact?: string; // Si no se proporciona, se usa el email
+
+  @IsEnum(['bartender', 'manager', 'cashier'])
+  @IsOptional()
+  employeeRole?: 'bartender' | 'manager' | 'cashier'; // Rol como empleado
 }
 
 export class UpdateUserRoleDto {

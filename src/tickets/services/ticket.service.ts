@@ -20,7 +20,7 @@ import {
 } from '../../shared/interfaces/ticket.interface';
 import { TABLE_NAMES } from '../../shared/config/dynamodb.config';
 import { ProductService } from '../../products/services/product.service';
-import { EmployeeService } from '../../employees/services/employee.service';
+import { AuthService } from '../../auth/services/auth.service';
 import { BarService } from '../../bars/services/bar.service';
 import { EventService } from '../../events/services/event.service';
 import { BusinessConfigService } from '../../shared/services/business-config.service';
@@ -34,7 +34,7 @@ export class TicketService {
     private readonly dynamoDBService: DynamoDBService,
     private readonly thermalPrinterService: ThermalPrinterService,
     private readonly productService: ProductService,
-    private readonly employeeService: EmployeeService,
+    private readonly authService: AuthService,
     private readonly barService: BarService,
     private readonly eventService: EventService,
     private readonly businessConfigService: BusinessConfigService,
@@ -43,15 +43,15 @@ export class TicketService {
 
   // ===== TICKETS =====
 
-  async create(createTicketDto: CreateTicketDto, employeeId: string): Promise<ITicket> {
+  async create(createTicketDto: CreateTicketDto, userId: string): Promise<ITicket> {
     const startTime = Date.now();
-    this.logger.log(`Creating ticket for employee ${employeeId}`, 'TicketService.create');
+    this.logger.log(`Creating ticket for user ${userId}`, 'TicketService.create');
 
     try {
       // Validar entrada con mensajes específicos
-      if (!employeeId || typeof employeeId !== 'string' || employeeId.trim().length === 0) {
-        this.logger.warn('Invalid employee ID provided', 'TicketService.create');
-        throw new BadRequestException('Employee ID is required and must be a valid string.');
+      if (!userId || typeof userId !== 'string' || userId.trim().length === 0) {
+        this.logger.warn('Invalid user ID provided', 'TicketService.create');
+        throw new BadRequestException('User ID is required and must be a valid string.');
       }
 
       if (!createTicketDto?.barId || typeof createTicketDto.barId !== 'string' || createTicketDto.barId.trim().length === 0) {
@@ -59,9 +59,12 @@ export class TicketService {
         throw new BadRequestException('Bar ID is required and must be a valid string. Please select a valid bar.');
       }
 
-      // Verificar que el empleado existe
-      this.logger.debug(`Validating employee ${employeeId}`, 'TicketService.create');
-      const employee = await this.employeeService.findOne(employeeId);
+      // Verificar que el usuario existe (ya no necesitamos buscar en employees)
+      this.logger.debug(`Validating user ${userId}`, 'TicketService.create');
+      const user = await this.authService.findUserById(userId);
+      if (!user) {
+        throw new BadRequestException('User not found. Please ensure you are logged in.');
+      }
       
       // Verificar que la barra existe
       this.logger.debug(`Validating bar ${createTicketDto.barId}`, 'TicketService.create');
@@ -75,8 +78,8 @@ export class TicketService {
       this.logger.debug('Creating ticket model', 'TicketService.create');
       const ticketModel = new TicketModel({
         ...createTicketDto,
-        employeeId: employee.id,
-        employeeName: employee.name,
+        userId: user.id,
+        userName: user.name,
         barId: bar.id,
         barName: bar.name,
         eventId: event.id,
@@ -87,13 +90,45 @@ export class TicketService {
       this.logger.debug(`Saving ticket ${ticketModel.id} to database`, 'TicketService.create');
       await this.dynamoDBService.put(TABLE_NAMES.TICKETS, ticketModel.toDynamoDBItem());
 
+      // Si el ticket tiene items (del cart), guardarlos
+      if (createTicketDto.items && createTicketDto.items.length > 0) {
+        this.logger.debug(`Adding ${createTicketDto.items.length} items to ticket ${ticketModel.id}`, 'TicketService.create');
+        
+        for (const itemDto of createTicketDto.items) {
+          // itemDto viene del cart con: productId, productName, quantity, price
+          const itemData: any = itemDto;
+          
+          const ticketItem = new TicketItemModel({
+            ticketId: ticketModel.id,
+            productId: itemData.productId,
+            productName: itemData.productName,
+            quantity: itemData.quantity,
+            unitPrice: itemData.price,
+            taxRate: 0, // Sin impuestos por ahora
+          });
+          
+          await this.dynamoDBService.put(TABLE_NAMES.TICKET_ITEMS, ticketItem.toDynamoDBItem());
+          ticketModel.items.push(ticketItem);
+        }
+        
+        // Recalcular totales
+        ticketModel.recalculateTotals();
+        
+        // Actualizar totales del ticket si vienen del cart
+        if (createTicketDto.paymentMethod) {
+          ticketModel.paymentMethod = createTicketDto.paymentMethod;
+        }
+        
+        await this.dynamoDBService.put(TABLE_NAMES.TICKETS, ticketModel.toDynamoDBItem());
+      }
+
       // Imprimir ticket automáticamente
       this.logger.debug(`Printing ticket ${ticketModel.id}`, 'TicketService.create');
       try {
         const printSuccess = await this.thermalPrinterService.printTicket({
           id: ticketModel.id,
-          employeeId: ticketModel.employeeId,
-          employeeName: ticketModel.employeeName,
+          userId: ticketModel.userId,
+          userName: ticketModel.userName,
           barId: ticketModel.barId,
           barName: ticketModel.barName,
           eventId: ticketModel.eventId,
@@ -131,8 +166,8 @@ export class TicketService {
 
       return {
         id: ticketModel.id,
-        employeeId: ticketModel.employeeId,
-        employeeName: ticketModel.employeeName,
+        userId: ticketModel.userId,
+        userName: ticketModel.userName,
         barId: ticketModel.barId,
         barName: ticketModel.barName,
         eventId: ticketModel.eventId,
@@ -177,12 +212,12 @@ export class TicketService {
       let items: Record<string, any>[] = [];
 
       // Construir query según los filtros con logging
-      if (query.employeeId) {
-        this.logger.debug(`Searching tickets for employee ${query.employeeId}`, 'TicketService.findAll');
+      if (query.userId) {
+        this.logger.debug(`Searching tickets for user ${query.userId}`, 'TicketService.findAll');
         items = await this.dynamoDBService.query(
           TABLE_NAMES.TICKETS,
           'GSI1PK = :gsi1pk',
-          { ':gsi1pk': `EMPLOYEE#${query.employeeId}` },
+          { ':gsi1pk': `USER#${query.userId}` }, // Cambiado de EMPLOYEE a USER
           { 'GSI1': 'GSI1PK, GSI1SK' }
         );
       } else if (query.barId) {
@@ -218,7 +253,7 @@ export class TicketService {
           if (query.dateTo && item.createdAt > query.dateTo) return false;
           if (query.search) {
             const searchLower = query.search.toLowerCase();
-            if (!item.employeeName?.toLowerCase().includes(searchLower) &&
+            if (!item.userName?.toLowerCase().includes(searchLower) &&
                 !item.barName?.toLowerCase().includes(searchLower)) return false;
           }
           return true;
@@ -254,8 +289,8 @@ export class TicketService {
 
       const tickets = validTickets.map(ticket => ({
         id: ticket.id,
-        employeeId: ticket.employeeId,
-        employeeName: ticket.employeeName,
+        userId: ticket.userId,
+        userName: ticket.userName,
         barId: ticket.barId,
         barName: ticket.barName,
         eventId: ticket.eventId,
@@ -328,8 +363,8 @@ export class TicketService {
 
       return {
         id: ticket.id,
-        employeeId: ticket.employeeId,
-        employeeName: ticket.employeeName,
+        userId: ticket.userId,
+        userName: ticket.userName,
         barId: ticket.barId,
         barName: ticket.barName,
         eventId: ticket.eventId,
@@ -867,7 +902,7 @@ export class TicketService {
         },
         ticket: {
           ticketNumber: ticketNumber,
-          employeeName: ticket.employeeName,
+          userName: ticket.userName,
           barName: ticket.barName,
           eventName: ticket.eventName,
           date: formattedDate,

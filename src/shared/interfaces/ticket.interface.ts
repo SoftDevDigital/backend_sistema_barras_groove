@@ -26,8 +26,8 @@ export interface ITicketItemUpdate {
 
 export interface ITicket {
   id: string;
-  employeeId: string;
-  employeeName: string;
+  userId: string; // ID del usuario (antes employeeId)
+  userName: string; // Nombre del usuario (antes employeeName)
   barId: string;
   barName: string;
   eventId: string;
@@ -63,7 +63,7 @@ export interface ITicketPayment {
 }
 
 export interface ITicketQuery {
-  employeeId?: string;
+  userId?: string; // ID del usuario (antes employeeId)
   barId?: string;
   eventId?: string;
   status?: 'open' | 'paid' | 'cancelled' | 'refunded';
@@ -100,7 +100,7 @@ export interface ITicketPrintFormat {
   };
   ticket: {
     ticketNumber: string;
-    employeeName: string;
+    userName: string; // Nombre del usuario (antes employeeName)
     barName: string;
     eventName: string;
     date: string;

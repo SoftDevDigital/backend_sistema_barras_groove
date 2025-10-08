@@ -4,6 +4,10 @@ export interface IUser {
   password: string;
   name: string;
   role: 'admin' | 'bartender';
+  // Campos de empleado (opcional para admins)
+  document?: string;
+  contact?: string;
+  employeeRole?: 'bartender' | 'manager' | 'cashier';
   createdAt: string;
   updatedAt: string;
 }
@@ -13,6 +17,9 @@ export interface IUserCreate {
   password: string;
   name: string;
   role?: 'admin' | 'bartender'; // Por defecto, los usuarios se registran como 'bartender'
+  document?: string;
+  contact?: string;
+  employeeRole?: 'bartender' | 'manager' | 'cashier';
 }
 
 export interface IUserUpdate {

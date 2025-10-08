@@ -30,8 +30,8 @@ export class CartService {
   // Procesar entrada del bartender (ej: "CCC2", "FER1")
   async processBartenderInput(
     input: string, 
-    bartenderId: string, 
-    bartenderName: string, 
+    userId: string, 
+    userName: string, 
     eventId: string
   ): Promise<IBartenderInputResponse> {
     this.logger.log(`Processing bartender input: ${input}`, 'CartService.processBartenderInput');
@@ -59,14 +59,14 @@ export class CartService {
       const addResult = await this.addToCart({
         productCode: code,
         quantity
-      }, bartenderId, bartenderName, eventId);
+      }, userId, userName, eventId);
 
       if (!addResult.success) {
         throw new BadRequestException(addResult.error || 'Error agregando al carrito');
       }
 
       // Obtener resumen del carrito
-      const cartSummary = await this.getCartSummary(bartenderId);
+      const cartSummary = await this.getCartSummary(userId);
 
       return {
         success: true,
@@ -94,8 +94,8 @@ export class CartService {
   // Agregar producto al carrito
   async addToCart(
     request: IAddToCartRequest, 
-    bartenderId: string, 
-    bartenderName: string, 
+    userId: string, 
+    userName: string, 
     eventId: string
   ): Promise<IAddToCartResponse> {
     this.logger.log(`Adding to cart: ${request.productCode}`, 'CartService.addToCart');
@@ -121,9 +121,9 @@ export class CartService {
       }
 
       // Obtener o crear carrito
-      let cart = this.activeCarts.get(bartenderId);
+      let cart = this.activeCarts.get(userId);
       if (!cart) {
-        cart = await this.createCart(bartenderId, bartenderName, eventId);
+        cart = await this.createCart(userId, userName, eventId);
       }
 
       // Verificar si el producto ya está en el carrito
@@ -152,7 +152,7 @@ export class CartService {
       cart.updatedAt = new Date().toISOString();
 
       // Guardar carrito
-      this.activeCarts.set(bartenderId, cart);
+      this.activeCarts.set(userId, cart);
 
       const cartItem = cart.items.find(item => item.productId === product.id);
 
@@ -174,8 +174,8 @@ export class CartService {
   }
 
   // Obtener resumen del carrito
-  async getCartSummary(bartenderId: string): Promise<ICartSummary> {
-    const cart = this.activeCarts.get(bartenderId);
+  async getCartSummary(userId: string): Promise<ICartSummary> {
+    const cart = this.activeCarts.get(userId);
     
     if (!cart) {
       return {
@@ -201,8 +201,8 @@ export class CartService {
   }
 
   // Limpiar carrito
-  async clearCart(bartenderId: string): Promise<{ success: boolean; message: string }> {
-    this.activeCarts.delete(bartenderId);
+  async clearCart(userId: string): Promise<{ success: boolean; message: string }> {
+    this.activeCarts.delete(userId);
     return {
       success: true,
       message: 'Carrito limpiado correctamente'
@@ -211,13 +211,18 @@ export class CartService {
 
   // Confirmar carrito y generar ticket
   async confirmCart(
-    bartenderId: string, 
+    userId: string, 
     request: IConfirmCartRequest
   ): Promise<IConfirmCartResponse> {
-    this.logger.log(`Confirming cart for bartender: ${bartenderId}`, 'CartService.confirmCart');
+    this.logger.log(`Confirming cart for user: ${userId}`, 'CartService.confirmCart');
 
     try {
-      const cart = this.activeCarts.get(bartenderId);
+      // Validar barId
+      if (!request.barId) {
+        throw new BadRequestException('Bar ID is required to confirm cart');
+      }
+
+      const cart = this.activeCarts.get(userId);
       
       if (!cart || cart.items.length === 0) {
         throw new BadRequestException('Carrito vacío');
@@ -234,8 +239,8 @@ export class CartService {
       // Crear ticket
       const ticketData = {
         eventId: cart.eventId,
-        barId: 'default_bar', // TODO: Obtener barId del evento o bartender
-        bartenderId: cart.bartenderId,
+        barId: request.barId, // Usar el barId proporcionado en el request
+        userId: cart.userId,
         customerName: request.customerName || 'Cliente',
         items: cart.items.map(item => ({
           productId: item.productId,
@@ -251,7 +256,7 @@ export class CartService {
         notes: request.notes
       };
 
-      const ticket = await this.ticketService.create(ticketData, cart.bartenderId);
+      const ticket = await this.ticketService.create(ticketData, cart.userId);
 
       // Descontar stock
       for (const item of cart.items) {
@@ -262,14 +267,21 @@ export class CartService {
         });
       }
 
+      // Obtener formato de impresión
+      const printFormat = await this.ticketService.getPrintFormat(ticket.id);
+
+      // Marcar ticket como impreso automáticamente
+      await this.ticketService.markAsPrinted(ticket.id);
+
       // Marcar carrito como confirmado
       cart.status = 'confirmed';
-      this.activeCarts.delete(bartenderId);
+      this.activeCarts.delete(userId);
 
       return {
         success: true,
         ticketId: ticket.id,
-        message: 'Ticket generado y stock actualizado correctamente'
+        message: 'Ticket generado, impreso y stock actualizado correctamente',
+        printFormat: printFormat // Formato listo para imprimir
       };
 
     } catch (error) {
@@ -341,11 +353,11 @@ export class CartService {
     }
   }
 
-  private async createCart(bartenderId: string, bartenderName: string, eventId: string): Promise<ICart> {
+  private async createCart(userId: string, userName: string, eventId: string): Promise<ICart> {
     const cart: ICart = {
       id: `cart_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      bartenderId,
-      bartenderName,
+      userId,
+      userName,
       eventId,
       items: [],
       subtotal: 0,
@@ -356,7 +368,7 @@ export class CartService {
       updatedAt: new Date().toISOString()
     };
 
-    this.activeCarts.set(bartenderId, cart);
+    this.activeCarts.set(userId, cart);
     return cart;
   }
 

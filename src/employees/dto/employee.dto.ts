@@ -2,6 +2,10 @@ import { IsString, IsNotEmpty, MinLength, IsEnum, IsOptional, IsEmail, Matches }
 
 export class CreateEmployeeDto {
   @IsString()
+  @IsOptional()
+  userId?: string; // ID del usuario de autenticación (para vincular user con employee)
+
+  @IsString()
   @IsNotEmpty()
   @MinLength(2)
   name: string;
@@ -62,7 +66,7 @@ export class EmployeeQueryDto {
 export class CreateAssignmentDto {
   @IsString()
   @IsNotEmpty()
-  employeeId: string;
+  userId: string; // ID del usuario (antes employeeId)
 
   @IsString()
   @IsNotEmpty()
@@ -101,7 +105,7 @@ export class AssignmentQueryDto {
 
   @IsString()
   @IsOptional()
-  employeeId?: string;
+  userId?: string; // ID del usuario (antes employeeId)
 
   @IsEnum(['morning', 'afternoon', 'night'])
   @IsOptional()

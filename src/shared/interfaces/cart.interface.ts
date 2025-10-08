@@ -10,8 +10,8 @@ export interface ICartItem {
 
 export interface ICart {
   id: string;
-  bartenderId: string;
-  bartenderName: string;
+  userId: string; // ID del usuario (antes bartenderId)
+  userName: string; // Nombre del usuario (antes bartenderName)
   eventId: string;
   items: ICartItem[];
   subtotal: number; // Suma de todos los totales de items
@@ -45,9 +45,10 @@ export interface ICartSummary {
 }
 
 export interface IConfirmCartRequest {
+  barId: string; // ID de la barra donde se realiza la venta
   customerName?: string;
   customerEmail?: string;
-  paymentMethod?: 'cash' | 'card' | 'transfer';
+  paymentMethod?: 'cash' | 'card' | 'mixed';
   notes?: string;
 }
 
@@ -55,6 +56,7 @@ export interface IConfirmCartResponse {
   success: boolean;
   ticketId?: string;
   message: string;
+  printFormat?: any; // Formato de impresión del ticket
   error?: string;
 }
 

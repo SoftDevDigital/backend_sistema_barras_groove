@@ -33,8 +33,8 @@ export interface IEventReport {
     totalRevenue: number;
   }>;
   employeeProductivity: Array<{
-    employeeId: string;
-    employeeName: string;
+    userId: string; // ID del usuario (antes employeeId)
+    userName: string; // Nombre del usuario (antes employeeName)
     totalTickets: number;
     totalRevenue: number;
   }>;

@@ -19,6 +19,20 @@ export class CreateTicketDto {
   @IsNotEmpty()
   barId: string;
 
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => AddTicketItemDto)
+  @IsOptional()
+  items?: AddTicketItemDto[];
+
+  @IsString()
+  @IsOptional()
+  customerName?: string;
+
+  @IsEnum(['cash', 'card', 'mixed'])
+  @IsOptional()
+  paymentMethod?: 'cash' | 'card' | 'mixed';
+
   @IsString()
   @IsOptional()
   notes?: string;
@@ -70,7 +84,7 @@ export class ProcessPaymentDto {
 export class TicketQueryDto {
   @IsUUID()
   @IsOptional()
-  employeeId?: string;
+  userId?: string; // ID del usuario (antes employeeId)
 
   @IsUUID()
   @IsOptional()
@@ -108,7 +122,7 @@ export class TicketQueryDto {
 export class TicketStatsQueryDto {
   @IsUUID()
   @IsOptional()
-  employeeId?: string;
+  userId?: string; // ID del usuario (antes employeeId)
 
   @IsUUID()
   @IsOptional()

@@ -6,7 +6,6 @@ import { BusinessConfigService } from '../shared/services/business-config.servic
 import { StockService } from '../stock/services/stock.service';
 import { AuthModule } from '../auth/auth.module';
 import { ProductsModule } from '../products/products.module';
-import { EmployeesModule } from '../employees/employees.module';
 import { BarsModule } from '../bars/bars.module';
 import { EventsModule } from '../events/events.module';
 import { StockModule } from '../stock/stock.module';
@@ -15,7 +14,6 @@ import { StockModule } from '../stock/stock.module';
   imports: [
     AuthModule,
     ProductsModule,
-    EmployeesModule,
     BarsModule,
     EventsModule,
     StockModule,

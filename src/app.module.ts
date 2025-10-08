@@ -7,7 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { EventsModule } from './events/events.module';
 import { BarsModule } from './bars/bars.module';
 import { ProductsModule } from './products/products.module';
-import { EmployeesModule } from './employees/employees.module';
+import { EmployeesModule } from './employees/employees.module'; // DEPRECADO: Ahora se usa AuthModule directamente
 import { TicketsModule } from './tickets/tickets.module';
 import { StockModule } from './stock/stock.module';
 import { ExpensesModule } from './expenses/expenses.module';
@@ -24,7 +24,7 @@ import { CartModule } from './cart/cart.module';
     EventsModule,
     BarsModule,
     ProductsModule,
-    EmployeesModule,
+    EmployeesModule, // DEPRECADO: Mantener temporalmente para asignaciones, migrar a AuthModule
     TicketsModule,
     StockModule,
     ExpensesModule,

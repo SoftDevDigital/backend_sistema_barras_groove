@@ -38,7 +38,7 @@ import {
 } from '../../shared/interfaces/stock.interface';
 import { TABLE_NAMES } from '../../shared/config/dynamodb.config';
 import { ProductService } from '../../products/services/product.service';
-import { EmployeeService } from '../../employees/services/employee.service';
+import { AuthService } from '../../auth/services/auth.service';
 import { BarService } from '../../bars/services/bar.service';
 import { EventService } from '../../events/services/event.service';
 import { BusinessConfigService } from '../../shared/services/business-config.service';
@@ -50,7 +50,7 @@ export class StockService {
   constructor(
     private readonly dynamoDBService: DynamoDBService,
     private readonly productService: ProductService,
-    private readonly employeeService: EmployeeService,
+    private readonly authService: AuthService,
     private readonly barService: BarService,
     private readonly eventService: EventService,
     private readonly businessConfigService: BusinessConfigService,
@@ -69,7 +69,7 @@ export class StockService {
       }
 
       // Obtener información del empleado
-      const employee = await this.employeeService.findOne(recordedBy);
+      const user = await this.authService.findUserById(recordedBy);
       
       // Obtener información del producto
       const product = await this.productService.findOne(createMovementDto.productId);
@@ -121,7 +121,7 @@ export class StockService {
         previousQuantity,
         newQuantity,
         recordedBy,
-        recordedByName: employee.name,
+        recordedByName: user.name,
       });
 
       // Guardar movimiento
@@ -1006,8 +1006,8 @@ export class StockService {
         );
       }
 
-      // Obtener información del empleado
-      const employee = await this.employeeService.findOne(requestedBy);
+      // Obtener información del usuario
+      const user = await this.authService.findUserById(requestedBy);
 
       // Crear transferencia
       const transfer = new StockTransferModel({
@@ -1016,7 +1016,7 @@ export class StockService {
         fromBarName: fromBar.name,
         toBarName: toBar.name,
         eventName: event.name,
-        requestedByName: employee.name,
+        requestedByName: user.name,
         status: 'pending',
       });
       
@@ -1133,15 +1133,15 @@ export class StockService {
       }
 
       const transfer = StockTransferModel.fromDynamoDBItem(item);
-      const employee = await this.employeeService.findOne(approvedBy);
+      const user = await this.authService.findUserById(approvedBy);
 
       if (updateData.status === 'approved') {
-        transfer.approve(approvedBy, employee.name);
+        transfer.approve(approvedBy, user.name);
         
         // Ejecutar la transferencia
         await this.executeStockTransfer(transfer);
       } else if (updateData.status === 'rejected') {
-        transfer.reject(approvedBy, employee.name, updateData.reason);
+        transfer.reject(approvedBy, user.name, updateData.reason);
       }
 
       await this.dynamoDBService.put(TABLE_NAMES.STOCK_TRANSFERS, transfer.toDynamoDBItem());

@@ -53,7 +53,7 @@ export class TicketController {
   ): Promise<ITicket[]> {
     // Si es bartender, solo puede ver sus propios tickets
     if (req.user.role === 'bartender') {
-      query.employeeId = req.user.sub;
+      query.userId = req.user.sub;
     }
     return this.ticketService.findAll(query);
   }
@@ -73,7 +73,7 @@ export class TicketController {
     const ticket = await this.ticketService.findOne(id);
     
     // Si es bartender, solo puede ver sus propios tickets
-    if (req.user.role === 'bartender' && ticket.employeeId !== req.user.sub) {
+    if (req.user.role === 'bartender' && ticket.userId !== req.user.sub) {
       throw new BadRequestException('Access denied. You can only view your own tickets.');
     }
     
@@ -91,7 +91,7 @@ export class TicketController {
     const ticket = await this.ticketService.findOne(id);
     
     // Si es bartender, solo puede modificar sus propios tickets
-    if (req.user.role === 'bartender' && ticket.employeeId !== req.user.sub) {
+    if (req.user.role === 'bartender' && ticket.userId !== req.user.sub) {
       throw new BadRequestException('Access denied. You can only modify your own tickets.');
     }
     
@@ -119,7 +119,7 @@ export class TicketController {
     // Verificar permisos - Solo quien creó el ticket puede eliminarlo
     if (req && req.user.role === 'bartender') {
       const ticket = await this.ticketService.findOne(id);
-      if (ticket.employeeId !== req.user.sub) {
+      if (ticket.userId !== req.user.sub) {
         throw new BadRequestException('Access denied. You can only delete your own tickets.');
       }
     }
@@ -144,7 +144,7 @@ export class TicketController {
     // Si es bartender, solo puede imprimir sus propios tickets
     if (req.user.role === 'bartender') {
       const ticket = await this.ticketService.findOne(id);
-      if (ticket.employeeId !== req.user.sub) {
+      if (ticket.userId !== req.user.sub) {
         throw new BadRequestException('Access denied. You can only print your own tickets.');
       }
     }
@@ -161,7 +161,7 @@ export class TicketController {
     // Si es bartender, solo puede marcar como impreso sus propios tickets
     if (req.user.role === 'bartender') {
       const ticket = await this.ticketService.findOne(id);
-      if (ticket.employeeId !== req.user.sub) {
+      if (ticket.userId !== req.user.sub) {
         throw new BadRequestException('Access denied. You can only mark your own tickets as printed.');
       }
     }

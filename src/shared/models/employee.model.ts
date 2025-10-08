@@ -7,8 +7,12 @@ export class EmployeeModel extends BaseModel implements IEmployee {
   contact: string;
   role: 'bartender' | 'manager' | 'cashier';
 
-  constructor(data: IEmployeeCreate) {
+  constructor(data: IEmployeeCreate & { userId?: string }) {
     super();
+    // Si se proporciona userId, usar ese ID en lugar de generar uno nuevo
+    if (data.userId) {
+      this.id = data.userId;
+    }
     this.name = data.name;
     this.document = data.document;
     this.contact = data.contact;
@@ -18,6 +22,8 @@ export class EmployeeModel extends BaseModel implements IEmployee {
   toDynamoDBItem(): Record<string, any> {
     return {
       ...super.toDynamoDBItem(),
+      PK: `EMPLOYEE#${this.id}`,
+      SK: `EMPLOYEE#${this.id}`,
       name: this.name,
       document: this.document,
       contact: this.contact,
@@ -45,7 +51,7 @@ export class EmployeeModel extends BaseModel implements IEmployee {
 }
 
 export class EmployeeAssignmentModel extends BaseModel implements IEmployeeAssignment {
-  employeeId: string;
+  userId: string; // ID del usuario (antes employeeId)
   eventId: string;
   barId: string;
   shift: 'morning' | 'afternoon' | 'night';
@@ -54,7 +60,7 @@ export class EmployeeAssignmentModel extends BaseModel implements IEmployeeAssig
 
   constructor(data: IEmployeeAssignmentCreate) {
     super();
-    this.employeeId = data.employeeId;
+    this.userId = data.userId;
     this.eventId = data.eventId;
     this.barId = data.barId;
     this.shift = data.shift;
@@ -65,25 +71,27 @@ export class EmployeeAssignmentModel extends BaseModel implements IEmployeeAssig
   toDynamoDBItem(): Record<string, any> {
     return {
       ...super.toDynamoDBItem(),
-      employeeId: this.employeeId,
+      PK: `ASSIGNMENT#${this.id}`,
+      SK: `ASSIGNMENT#${this.id}`,
+      userId: this.userId,
       eventId: this.eventId,
       barId: this.barId,
       shift: this.shift,
       assignedAt: this.assignedAt,
       status: this.status,
-      // GSI1 para búsquedas por empleado
-      GSI1PK: `EMPLOYEE#${this.employeeId}`,
+      // GSI1 para búsquedas por usuario
+      GSI1PK: `USER#${this.userId}`, // Cambiado de EMPLOYEE a USER
       GSI1SK: `ASSIGNMENT#${this.eventId}#${this.barId}`,
       // GSI2 para búsquedas por evento
       GSI2PK: `EVENT#${this.eventId}`,
-      GSI2SK: `ASSIGNMENT#${this.barId}#${this.employeeId}`,
+      GSI2SK: `ASSIGNMENT#${this.barId}#${this.userId}`,
     };
   }
 
   static fromDynamoDBItem(item: Record<string, any>): IEmployeeAssignment {
     return {
       id: item.id,
-      employeeId: item.employeeId,
+      userId: item.userId || item.employeeId, // Compatibilidad con asignaciones antiguas
       eventId: item.eventId,
       barId: item.barId,
       shift: item.shift,

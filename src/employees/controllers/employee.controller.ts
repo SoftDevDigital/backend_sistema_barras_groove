@@ -89,15 +89,15 @@ export class EmployeeController {
       
       // Si se especifica eventId o barId, retornar empleados completos
       if (eventId || barId) {
-        const employeeIds = [...new Set(assignments.map(a => a.employeeId))];
+        const userIds = [...new Set(assignments.map(a => a.userId))];
         const employees: IEmployee[] = [];
         
-        for (const employeeId of employeeIds) {
+        for (const userId of userIds) {
           try {
-            const employee = await this.employeeService.findOne(employeeId);
+            const employee = await this.employeeService.findOne(userId);
             employees.push(employee);
           } catch (error) {
-            console.warn(`Employee ${employeeId} not found`);
+            console.warn(`User ${userId} not found`);
           }
         }
         return employees;
@@ -119,12 +119,12 @@ export class EmployeeController {
   @HttpCode(HttpStatus.CREATED)
   @Roles('admin')
   async assignEmployee(
-    @Param('id') employeeId: string,
-    @Body() assignmentData: Omit<CreateAssignmentDto, 'employeeId'>
+    @Param('id') userId: string,
+    @Body() assignmentData: Omit<CreateAssignmentDto, 'userId'>
   ): Promise<IEmployeeAssignment> {
     const createAssignmentDto: CreateAssignmentDto = {
       ...assignmentData,
-      employeeId
+      userId
     };
     return this.employeeService.createAssignment(createAssignmentDto);
   }

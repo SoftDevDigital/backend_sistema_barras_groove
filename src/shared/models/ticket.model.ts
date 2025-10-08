@@ -78,8 +78,8 @@ export class TicketItemModel extends BaseModel implements ITicketItem {
 }
 
 export class TicketModel extends BaseModel implements ITicket {
-  employeeId: string;
-  employeeName: string;
+  userId: string; // ID del usuario (antes employeeId)
+  userName: string; // Nombre del usuario (antes employeeName)
   barId: string;
   barName: string;
   eventId: string;
@@ -96,8 +96,8 @@ export class TicketModel extends BaseModel implements ITicket {
   printed: boolean;
 
   constructor(data?: ITicketCreate & { 
-    employeeId: string, 
-    employeeName: string, 
+    userId: string, 
+    userName: string, 
     barId: string, 
     barName: string, 
     eventId: string, 
@@ -106,8 +106,8 @@ export class TicketModel extends BaseModel implements ITicket {
     super();
     
     if (data) {
-      this.employeeId = data.employeeId;
-      this.employeeName = data.employeeName;
+      this.userId = data.userId;
+      this.userName = data.userName;
       this.barId = data.barId;
       this.barName = data.barName;
       this.eventId = data.eventId;
@@ -120,8 +120,8 @@ export class TicketModel extends BaseModel implements ITicket {
       this.notes = data.notes;
       this.printed = false;
     } else {
-      this.employeeId = '';
-      this.employeeName = '';
+      this.userId = '';
+      this.userName = '';
       this.barId = '';
       this.barName = '';
       this.eventId = '';
@@ -140,15 +140,15 @@ export class TicketModel extends BaseModel implements ITicket {
     return {
       PK: `TICKET#${this.id}`,
       SK: `TICKET#${this.id}`,
-      GSI1PK: `EMPLOYEE#${this.employeeId}`,
+      GSI1PK: `USER#${this.userId}`, // Cambiado de EMPLOYEE a USER
       GSI1SK: `TICKET#${this.createdAt}`,
       GSI2PK: `BAR#${this.barId}`,
       GSI2SK: `TICKET#${this.createdAt}`,
       GSI3PK: `EVENT#${this.eventId}`,
       GSI3SK: `TICKET#${this.createdAt}`,
       ...super.toDynamoDBItem(),
-      employeeId: this.employeeId,
-      employeeName: this.employeeName,
+      userId: this.userId,
+      userName: this.userName,
       barId: this.barId,
       barName: this.barName,
       eventId: this.eventId,
@@ -167,8 +167,8 @@ export class TicketModel extends BaseModel implements ITicket {
 
   static fromDynamoDBItem(item: Record<string, any>): TicketModel {
     const ticket = new TicketModel({
-      employeeId: item.employeeId,
-      employeeName: item.employeeName,
+      userId: item.userId || item.employeeId, // Compatibilidad con tickets antiguos
+      userName: item.userName || item.employeeName,
       barId: item.barId,
       barName: item.barName,
       eventId: item.eventId,

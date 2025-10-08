@@ -102,10 +102,12 @@ const tables = [
   {
     TableName: TABLE_NAMES.EMPLOYEES,
     KeySchema: [
-      { AttributeName: 'id', KeyType: 'HASH' },
+      { AttributeName: 'PK', KeyType: 'HASH' },
+      { AttributeName: 'SK', KeyType: 'RANGE' },
     ],
     AttributeDefinitions: [
-      { AttributeName: 'id', AttributeType: 'S' },
+      { AttributeName: 'PK', AttributeType: 'S' },
+      { AttributeName: 'SK', AttributeType: 'S' },
       { AttributeName: 'GSI1PK', AttributeType: 'S' },
       { AttributeName: 'GSI1SK', AttributeType: 'S' },
       { AttributeName: 'GSI2PK', AttributeType: 'S' },
@@ -134,10 +136,12 @@ const tables = [
   {
     TableName: TABLE_NAMES.EMPLOYEE_ASSIGNMENTS,
     KeySchema: [
-      { AttributeName: 'id', KeyType: 'HASH' },
+      { AttributeName: 'PK', KeyType: 'HASH' },
+      { AttributeName: 'SK', KeyType: 'RANGE' },
     ],
     AttributeDefinitions: [
-      { AttributeName: 'id', AttributeType: 'S' },
+      { AttributeName: 'PK', AttributeType: 'S' },
+      { AttributeName: 'SK', AttributeType: 'S' },
       { AttributeName: 'GSI1PK', AttributeType: 'S' },
       { AttributeName: 'GSI1SK', AttributeType: 'S' },
       { AttributeName: 'GSI2PK', AttributeType: 'S' },

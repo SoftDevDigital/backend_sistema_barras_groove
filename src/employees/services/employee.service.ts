@@ -29,9 +29,14 @@ export class EmployeeService {
         throw new BadRequestException('Name, document, contact, and role are required');
       }
 
-      // Verificar si ya existe un empleado con el mismo documento
-      const existingEmployee = await this.findByDocument(createEmployeeDto.document);
-      if (existingEmployee) {
+      // Verificar si ya existe un empleado con el mismo documento usando scan
+      const existingEmployees = await this.dynamoDBService.scan(
+        TABLE_NAMES.EMPLOYEES,
+        'document = :document',
+        { ':document': createEmployeeDto.document }
+      );
+      
+      if (existingEmployees && existingEmployees.length > 0) {
         throw new ConflictException(`Employee with document '${createEmployeeDto.document}' already exists. Please use a different document.`);
       }
 
@@ -95,12 +100,32 @@ export class EmployeeService {
         throw new BadRequestException('Employee ID is required');
       }
 
-      const item = await this.dynamoDBService.get(TABLE_NAMES.EMPLOYEES, { id });
-      if (!item) {
+      // Intentar buscar por PK/SK primero
+      try {
+        const item = await this.dynamoDBService.get(TABLE_NAMES.EMPLOYEES, { 
+          PK: `EMPLOYEE#${id}`, 
+          SK: `EMPLOYEE#${id}` 
+        });
+        if (item) {
+          return EmployeeModel.fromDynamoDBItem(item);
+        }
+      } catch (getError) {
+        // Si falla el GET, intentar con scan
+        console.warn('GET by PK/SK failed, trying scan by id:', getError.message);
+      }
+
+      // Fallback: buscar por id usando scan
+      const items = await this.dynamoDBService.scan(
+        TABLE_NAMES.EMPLOYEES,
+        'id = :id',
+        { ':id': id }
+      );
+
+      if (!items || items.length === 0) {
         throw new NotFoundException(`Employee with ID '${id}' not found`);
       }
 
-      return EmployeeModel.fromDynamoDBItem(item);
+      return EmployeeModel.fromDynamoDBItem(items[0]);
     } catch (error) {
       if (error instanceof BadRequestException || error instanceof NotFoundException) {
         throw error;
@@ -216,21 +241,20 @@ export class EmployeeService {
   async createAssignment(createAssignmentDto: CreateAssignmentDto): Promise<IEmployeeAssignment> {
     try {
       // Validar entrada
-      if (!createAssignmentDto.employeeId || !createAssignmentDto.eventId || !createAssignmentDto.barId || !createAssignmentDto.shift) {
-        throw new BadRequestException('Employee ID, Event ID, Bar ID, and shift are required');
+      if (!createAssignmentDto.userId || !createAssignmentDto.eventId || !createAssignmentDto.barId || !createAssignmentDto.shift) {
+        throw new BadRequestException('User ID, Event ID, Bar ID, and shift are required');
       }
 
-      // Verificar que el empleado existe
-      await this.findOne(createAssignmentDto.employeeId);
+      // Ya no necesitamos verificar que el usuario existe (viene del JWT)
 
       // Verificar que no tenga asignación activa en el mismo turno
       const existingAssignment = await this.findActiveAssignment(
-        createAssignmentDto.employeeId,
+        createAssignmentDto.userId,
         createAssignmentDto.eventId,
         createAssignmentDto.shift
       );
       if (existingAssignment) {
-        throw new ConflictException(`Employee already has an active assignment for ${createAssignmentDto.shift} shift in this event`);
+        throw new ConflictException(`User already has an active assignment for ${createAssignmentDto.shift} shift in this event`);
       }
 
       // Crear nueva asignación
@@ -239,7 +263,7 @@ export class EmployeeService {
 
       return {
         id: assignmentModel.id,
-        employeeId: assignmentModel.employeeId,
+        userId: assignmentModel.userId,
         eventId: assignmentModel.eventId,
         barId: assignmentModel.barId,
         shift: assignmentModel.shift,
@@ -270,12 +294,12 @@ export class EmployeeService {
           undefined,
           'GSI2'
         );
-      } else if (query.employeeId) {
-        // Buscar por empleado usando GSI1
+      } else if (query.userId) {
+        // Buscar por usuario usando GSI1
         items = await this.dynamoDBService.query(
           TABLE_NAMES.EMPLOYEE_ASSIGNMENTS,
           'GSI1PK = :gsi1pk',
-          { ':gsi1pk': `EMPLOYEE#${query.employeeId}` },
+          { ':gsi1pk': `USER#${query.userId}` }, // Cambiado de EMPLOYEE a USER
           undefined,
           'GSI1'
         );
@@ -302,8 +326,8 @@ export class EmployeeService {
     }
   }
 
-  async findAssignmentsByEmployee(employeeId: string, query: AssignmentQueryDto = {}): Promise<IEmployeeAssignment[]> {
-    return this.findAssignments({ ...query, employeeId });
+  async findAssignmentsByEmployee(userId: string, query: AssignmentQueryDto = {}): Promise<IEmployeeAssignment[]> {
+    return this.findAssignments({ ...query, userId });
   }
 
   async updateAssignment(id: string, updateAssignmentDto: UpdateAssignmentDto): Promise<IEmployeeAssignment> {
@@ -325,7 +349,7 @@ export class EmployeeService {
       // Actualizar GSI si es necesario
       if (updateAssignmentDto.barId && updateAssignmentDto.shift) {
         updateData.GSI1SK = `ASSIGNMENT#${existingAssignment.eventId}#${updateAssignmentDto.barId}`;
-        updateData.GSI2SK = `ASSIGNMENT#${updateAssignmentDto.barId}#${existingAssignment.employeeId}`;
+        updateData.GSI2SK = `ASSIGNMENT#${updateAssignmentDto.barId}#${existingAssignment.userId}`;
       }
 
       await this.dynamoDBService.update(
@@ -381,13 +405,13 @@ export class EmployeeService {
     return EmployeeAssignmentModel.fromDynamoDBItem(item);
   }
 
-  private async findActiveAssignment(employeeId: string, eventId: string, shift: string): Promise<IEmployeeAssignment | null> {
+  private async findActiveAssignment(userId: string, eventId: string, shift: string): Promise<IEmployeeAssignment | null> {
     try {
       const items = await this.dynamoDBService.query(
         TABLE_NAMES.EMPLOYEE_ASSIGNMENTS,
         'GSI1PK = :gsi1pk AND begins_with(GSI1SK, :gsi1sk)',
         { 
-          ':gsi1pk': `EMPLOYEE#${employeeId}`,
+          ':gsi1pk': `USER#${userId}`, // Cambiado de EMPLOYEE a USER
           ':gsi1sk': `ASSIGNMENT#${eventId}`
         },
         undefined,

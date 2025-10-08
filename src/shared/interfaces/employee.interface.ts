@@ -24,7 +24,7 @@ export interface IEmployeeUpdate {
 
 export interface IEmployeeAssignment {
   id: string;
-  employeeId: string;
+  userId: string; // ID del usuario (antes employeeId)
   eventId: string;
   barId: string;
   shift: 'morning' | 'afternoon' | 'night';
@@ -35,7 +35,7 @@ export interface IEmployeeAssignment {
 }
 
 export interface IEmployeeAssignmentCreate {
-  employeeId: string;
+  userId: string; // ID del usuario (antes employeeId)
   eventId: string;
   barId: string;
   shift: 'morning' | 'afternoon' | 'night';

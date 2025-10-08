@@ -28,9 +28,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
     let errorId = `ERR-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     try {
-      // Log del error con ID único para tracking
-      this.logger.error(`[${errorId}] Exception caught:`, exception instanceof Error ? exception.stack : JSON.stringify(exception), 'HttpExceptionFilter');
-
       if (exception instanceof HttpException) {
         status = exception.getStatus();
         
@@ -85,20 +82,20 @@ export class HttpExceptionFilter implements ExceptionFilter {
           };
         }
       } else if (exception instanceof Error) {
+        // Solo loggear errores 500+ (errores de servidor)
+        this.logger.error(`[${errorId}] Unexpected error:`, exception.stack, 'HttpExceptionFilter');
         message = {
           message: 'An unexpected error occurred. Please try again later.',
           errorId: errorId,
           details: process.env.NODE_ENV === 'development' ? exception.message : undefined
         };
-        // Log completo del error para debugging
-        this.logger.error(`[${errorId}] Unexpected error:`, exception.stack, 'HttpExceptionFilter');
       } else {
-        // Error completamente desconocido
+        // Error completamente desconocido - siempre loggear
+        this.logger.error(`[${errorId}] Unknown error type:`, JSON.stringify(exception), 'HttpExceptionFilter');
         message = {
           message: 'An unexpected error occurred. Please try again later.',
           errorId: errorId
         };
-        this.logger.error(`[${errorId}] Unknown error type:`, JSON.stringify(exception), 'HttpExceptionFilter');
       }
 
       const errorResponse = {
@@ -109,9 +106,11 @@ export class HttpExceptionFilter implements ExceptionFilter {
         message: message,
       };
 
-      // Log de la respuesta de error
-      const logMessage = typeof message === 'string' ? message : JSON.stringify(message);
-      this.logger.apiCall(request.method, request.url, status, `[${errorId}] ${logMessage}`);
+      // Log de la respuesta de error solo para errores 500+
+      if (status >= 500) {
+        const logMessage = typeof message === 'string' ? message : JSON.stringify(message);
+        this.logger.apiCall(request.method, request.url, status, `[${errorId}] ${logMessage}`);
+      }
 
       // Asegurar que la respuesta se envíe correctamente
       if (!response.headersSent) {

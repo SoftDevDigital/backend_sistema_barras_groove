@@ -39,13 +39,13 @@ export class CartController {
     this.logger.log(`Processing bartender input: ${body.input}`, 'CartController.processInput');
     
     try {
-      const bartenderId = req.user.sub;
-      const bartenderName = req.user.email;
+      const userId = req.user.sub;
+      const userName = req.user.name || req.user.email;
       
       const result = await this.cartService.processBartenderInput(
         body.input,
-        bartenderId,
-        bartenderName,
+        userId,
+        userName,
         body.eventId
       );
       
@@ -65,8 +65,8 @@ export class CartController {
     this.logger.log('Getting cart summary', 'CartController.getCart');
     
     try {
-      const bartenderId = req.user.sub;
-      const result = await this.cartService.getCartSummary(bartenderId);
+      const userId = req.user.sub;
+      const result = await this.cartService.getCartSummary(userId);
       
       this.logger.log(`Cart summary retrieved: ${result.totalItems} items`, 'CartController.getCart');
       return result;
@@ -85,8 +85,8 @@ export class CartController {
     this.logger.log('Clearing cart', 'CartController.clearCart');
     
     try {
-      const bartenderId = req.user.sub;
-      const result = await this.cartService.clearCart(bartenderId);
+      const userId = req.user.sub;
+      const result = await this.cartService.clearCart(userId);
       
       this.logger.log('Cart cleared successfully', 'CartController.clearCart');
       return result;
@@ -108,8 +108,13 @@ export class CartController {
     this.logger.log('Confirming cart and generating ticket', 'CartController.confirmCart');
     
     try {
-      const bartenderId = req.user.sub;
-      const result = await this.cartService.confirmCart(bartenderId, request);
+      const userId = req.user.sub;
+      console.log(`[CartController] Token payload:`, req.user);
+      console.log(`[CartController] User ID from token: ${userId}`);
+      console.log(`[CartController] User email from token: ${req.user.email}`);
+      console.log(`[CartController] User name from token: ${req.user.name}`);
+      
+      const result = await this.cartService.confirmCart(userId, request);
       
       if (result.success) {
         this.logger.log(`Ticket generated successfully: ${result.ticketId}`, 'CartController.confirmCart');

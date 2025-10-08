@@ -39,6 +39,9 @@ export class AuthService {
       password: hashedPassword,
       name: registerDto.name,
       role: registerDto.role || 'bartender',
+      document: registerDto.document,
+      contact: registerDto.contact,
+      employeeRole: registerDto.employeeRole,
     });
 
     await this.dynamoDBService.put(TABLE_NAMES.USERS, userModel.toDynamoDBItem());
@@ -47,6 +50,7 @@ export class AuthService {
     const token = this.jwtService.sign({
       sub: userModel.id,
       email: userModel.email,
+      name: userModel.name,
       role: userModel.role,
     });
 
@@ -57,6 +61,9 @@ export class AuthService {
         email: userModel.email,
         name: userModel.name,
         role: userModel.role,
+        document: userModel.document,
+        contact: userModel.contact,
+        employeeRole: userModel.employeeRole,
         createdAt: userModel.createdAt,
         updatedAt: userModel.updatedAt,
       },
@@ -89,6 +96,7 @@ export class AuthService {
     const token = this.jwtService.sign({
       sub: user.id,
       email: user.email,
+      name: user.name,
       role: user.role,
     });
 
@@ -99,6 +107,9 @@ export class AuthService {
         email: user.email,
         name: user.name,
         role: user.role,
+        document: user.document,
+        contact: user.contact,
+        employeeRole: user.employeeRole,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
@@ -173,6 +184,8 @@ export class AuthService {
         throw new BadRequestException('User ID is required');
       }
 
+      console.log(`[AuthService] Searching for user with ID: ${id}`);
+
       // Buscar por ID usando scan ya que el PK/SK usa email
       const items = await this.dynamoDBService.scan(
         TABLE_NAMES.USERS,
@@ -180,11 +193,16 @@ export class AuthService {
         { ':id': id }
       );
       
+      console.log(`[AuthService] Found ${items.length} users with ID ${id}`);
+      
       const item = items.length > 0 ? items[0] : null;
       
       if (!item) {
+        console.warn(`[AuthService] User with ID ${id} not found in database`);
         return null;
       }
+
+      console.log(`[AuthService] User found: ${item.name} (${item.email})`);
 
       const { password, ...userWithoutPassword } = item;
       return userWithoutPassword as Omit<IUser, 'password'>;

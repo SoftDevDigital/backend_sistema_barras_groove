@@ -70,7 +70,7 @@ export class BusinessConfigModel extends BaseModel implements IBusinessConfig {
       this.businessTaxId = data.businessTaxId;
       this.businessWebsite = data.businessWebsite;
       this.businessLogo = data.businessLogo;
-      this.currency = data.currency || 'USD';
+      this.currency = data.currency || 'ARS';
       this.taxRate = data.taxRate || 10;
       this.thankYouMessage = data.thankYouMessage || '¡Gracias por su compra!';
       this.receiptFooter = data.receiptFooter || 'Sistema de Barras Groove';
@@ -87,7 +87,7 @@ export class BusinessConfigModel extends BaseModel implements IBusinessConfig {
       this.businessTaxId = '';
       this.businessWebsite = '';
       this.businessLogo = '';
-      this.currency = 'USD';
+      this.currency = 'ARS';
       this.taxRate = 10;
       this.thankYouMessage = '¡Gracias por su compra!';
       this.receiptFooter = 'Sistema de Barras Groove';

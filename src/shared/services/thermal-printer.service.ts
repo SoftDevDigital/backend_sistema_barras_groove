@@ -127,7 +127,7 @@ export class ThermalPrinterService {
       printer.alignLeft();
       printer.println(`Fecha: ${new Date(ticket.createdAt).toLocaleString('es-ES')}`);
       printer.println(`Ticket ID: ${ticket.id.substring(0, 8)}`);
-      printer.println(`Atendido por: ${ticket.employeeId}`);
+      printer.println(`Atendido por: ${ticket.userName}`);
       printer.println(`Barra: ${ticket.barName}`);
       printer.println(`Evento: ${ticket.eventName}`);
       printer.drawLine();
