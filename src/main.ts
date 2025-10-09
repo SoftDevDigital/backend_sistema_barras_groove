@@ -67,8 +67,11 @@ async function bootstrap() {
       
       // Permitir localhost:3000 y el origen configurado en variables de entorno
       const allowedOrigins = [
-        'http://localhost:3000',
-        'http://127.0.0.1:3000',
+        'http://localhost:3003',
+        'http://127.0.0.1:3003',
+        'https://festgogest.com',
+        'https://www.festgogest.com',
+        'http://festgogest.com',
         appConfig.corsOrigin
       ].filter(origin => origin && origin !== '*');
       

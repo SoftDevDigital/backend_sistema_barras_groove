@@ -20,7 +20,7 @@ const getEnvNumber = (key: string, defaultValue: number): number => {
 export const appConfig = {
   // Application
   nodeEnv: getEnvVar('NODE_ENV', 'development'),
-  port: getEnvNumber('PORT', 3001),
+  port: getEnvNumber('PORT', 3002),
   corsOrigin: getEnvVar('CORS_ORIGIN', '*'),
   
   // JWT
