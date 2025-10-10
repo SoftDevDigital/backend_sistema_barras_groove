@@ -200,6 +200,54 @@ export class CartService {
     };
   }
 
+  // Eliminar un item específico del carrito
+  async removeItemFromCart(userId: string, productId: string): Promise<{ success: boolean; message: string; cartSummary?: ICartSummary }> {
+    this.logger.log(`Removing item ${productId} from cart for user ${userId}`, 'CartService.removeItemFromCart');
+
+    try {
+      const cart = this.activeCarts.get(userId);
+      
+      if (!cart) {
+        throw new NotFoundException('Carrito no encontrado');
+      }
+
+      // Buscar el item en el carrito
+      const itemIndex = cart.items.findIndex(item => item.productId === productId);
+      
+      if (itemIndex === -1) {
+        throw new NotFoundException('Producto no encontrado en el carrito');
+      }
+
+      // Obtener el nombre del producto antes de eliminarlo
+      const productName = cart.items[itemIndex].productName;
+
+      // Eliminar el item
+      cart.items.splice(itemIndex, 1);
+
+      // Recalcular totales
+      this.recalculateCartTotals(cart);
+      cart.updatedAt = new Date().toISOString();
+
+      // Si el carrito está vacío, eliminarlo
+      if (cart.items.length === 0) {
+        this.activeCarts.delete(userId);
+      }
+
+      // Obtener resumen actualizado
+      const cartSummary = await this.getCartSummary(userId);
+
+      return {
+        success: true,
+        message: `${productName} eliminado del carrito`,
+        cartSummary
+      };
+
+    } catch (error) {
+      this.logger.error(`Error removing item from cart:`, error.stack, 'CartService.removeItemFromCart');
+      throw error;
+    }
+  }
+
   // Limpiar carrito
   async clearCart(userId: string): Promise<{ success: boolean; message: string }> {
     this.activeCarts.delete(userId);

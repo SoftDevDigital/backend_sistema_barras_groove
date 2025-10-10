@@ -77,6 +77,29 @@ export class CartController {
     }
   }
 
+  // Eliminar un item específico del carrito
+  @Delete('cart/item')
+  @HttpCode(HttpStatus.OK)
+  @Roles('bartender')
+  async removeItemFromCart(
+    @Body() body: { productId: string },
+    @Request() req: any
+  ): Promise<{ success: boolean; message: string; cartSummary?: any }> {
+    this.logger.log(`Removing item from cart: ${body.productId}`, 'CartController.removeItemFromCart');
+    
+    try {
+      const userId = req.user.sub;
+      const result = await this.cartService.removeItemFromCart(userId, body.productId);
+      
+      this.logger.log('Item removed from cart successfully', 'CartController.removeItemFromCart');
+      return result;
+      
+    } catch (error) {
+      this.logger.error(`Error removing item from cart:`, error.stack, 'CartController.removeItemFromCart');
+      throw error;
+    }
+  }
+
   // Limpiar carrito
   @Delete('cart')
   @HttpCode(HttpStatus.OK)

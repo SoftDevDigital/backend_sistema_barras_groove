@@ -154,8 +154,8 @@ export class BusinessConfigService {
       businessPhone: '+1 (555) 123-4567',
       businessEmail: 'info@groovebar.com',
       businessTaxId: 'RUC: 12345678901',
-      businessWebsite: 'www.groovebar.com',
-      currency: 'USD',
+      businessWebsite: 'fest-go.com',
+      currency: 'ARS',
       taxRate: 10,
       thankYouMessage: '¡Gracias por su compra!',
       receiptFooter: 'Sistema de Barras Groove'
@@ -177,8 +177,8 @@ export class BusinessConfigService {
       businessPhone: '+1 (555) 123-4567',
       businessEmail: 'info@groovebar.com',
       businessTaxId: 'RUC: 12345678901',
-      businessWebsite: 'www.groovebar.com',
-      currency: 'USD',
+      businessWebsite: 'fest-go.com',
+      currency: 'ARS',
       taxRate: 10,
       thankYouMessage: '¡Gracias por su compra!',
       receiptFooter: 'Sistema de Barras Groove'
