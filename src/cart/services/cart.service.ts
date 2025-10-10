@@ -83,10 +83,15 @@ export class CartService {
 
     } catch (error) {
       this.logger.error(`Error processing bartender input:`, error.stack, 'CartService.processBartenderInput');
+      
+      // Obtener el carrito actual para devolverlo aunque haya error
+      const cartSummary = await this.getCartSummary(userId);
+      
       return {
         success: false,
-        message: 'Error procesando entrada',
-        error: error.message
+        message: error.message || 'Error procesando entrada',
+        error: error.message,
+        cartSummary // Siempre devolver el carrito, aunque esté vacío
       };
     }
   }
