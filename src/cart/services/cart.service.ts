@@ -130,8 +130,8 @@ export class CartService {
       const existingItemIndex = cart.items.findIndex(item => item.productId === product.id);
       
       if (existingItemIndex >= 0) {
-        // Actualizar cantidad existente
-        cart.items[existingItemIndex].quantity += quantity;
+        // REEMPLAZAR cantidad existente (no sumar)
+        cart.items[existingItemIndex].quantity = quantity;
         cart.items[existingItemIndex].total = cart.items[existingItemIndex].quantity * cart.items[existingItemIndex].price;
       } else {
         // Agregar nuevo item
