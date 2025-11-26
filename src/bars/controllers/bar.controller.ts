@@ -63,6 +63,29 @@ export class BarController {
       revenue: number;
       percentage: number;
     }>;
+    productsSoldByPaymentMethod: {
+      cash: Array<{
+        productId: string;
+        productName: string;
+        quantitySold: number;
+        revenue: number;
+        percentage: number;
+      }>;
+      card: Array<{
+        productId: string;
+        productName: string;
+        quantitySold: number;
+        revenue: number;
+        percentage: number;
+      }>;
+      mixed: Array<{
+        productId: string;
+        productName: string;
+        quantitySold: number;
+        revenue: number;
+        percentage: number;
+      }>;
+    };
     salesByUser: Array<{
       userId: string;
       userName: string;

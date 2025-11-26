@@ -322,6 +322,29 @@ export class BarService {
       revenue: number;
       percentage: number;
     }>;
+    productsSoldByPaymentMethod: {
+      cash: Array<{
+        productId: string;
+        productName: string;
+        quantitySold: number;
+        revenue: number;
+        percentage: number;
+      }>;
+      card: Array<{
+        productId: string;
+        productName: string;
+        quantitySold: number;
+        revenue: number;
+        percentage: number;
+      }>;
+      mixed: Array<{
+        productId: string;
+        productName: string;
+        quantitySold: number;
+        revenue: number;
+        percentage: number;
+      }>;
+    };
     salesByUser: Array<{
       userId: string;
       userName: string;
@@ -405,6 +428,40 @@ export class BarService {
         percentage: totalRevenue > 0 ? (data.revenue / totalRevenue) * 100 : 0
       })).sort((a, b) => b.revenue - a.revenue);
 
+      // Productos vendidos por método de pago
+      const calculateProductsByPaymentMethod = (paymentMethod: 'cash' | 'card' | 'mixed') => {
+        const filteredTickets = ticketsWithItems.filter(t => t.paymentMethod === paymentMethod);
+        const methodRevenue = filteredTickets.reduce((sum, t) => sum + (t.total || 0), 0);
+        const productsMapByMethod = new Map<string, { name: string; quantity: number; revenue: number }>();
+        
+        for (const ticket of filteredTickets) {
+          for (const item of ticket.items) {
+            const existing = productsMapByMethod.get(item.productId) || { 
+              name: item.productName, 
+              quantity: 0, 
+              revenue: 0 
+            };
+            existing.quantity += item.quantity;
+            existing.revenue += item.total;
+            productsMapByMethod.set(item.productId, existing);
+          }
+        }
+
+        return Array.from(productsMapByMethod.entries()).map(([productId, data]) => ({
+          productId,
+          productName: data.name,
+          quantitySold: data.quantity,
+          revenue: data.revenue,
+          percentage: methodRevenue > 0 ? (data.revenue / methodRevenue) * 100 : 0
+        })).sort((a, b) => b.revenue - a.revenue);
+      };
+
+      const productsSoldByPaymentMethod = {
+        cash: calculateProductsByPaymentMethod('cash'),
+        card: calculateProductsByPaymentMethod('card'),
+        mixed: calculateProductsByPaymentMethod('mixed')
+      };
+
       // Ventas por usuario (bartender)
       const usersMap = new Map<string, { name: string; count: number; total: number }>();
       
@@ -453,6 +510,7 @@ export class BarService {
         totalRevenue,
         averageTicketValue,
         productsSold,
+        productsSoldByPaymentMethod,
         salesByUser,
         salesByPaymentMethod,
         hourlyDistribution
