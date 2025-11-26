@@ -149,7 +149,7 @@ export class BusinessConfigService {
     this.logger.log('Creating default business configuration', 'BusinessConfigService.createDefaultConfig');
     
     const defaultConfig = new BusinessConfigModel({
-      businessName: 'GROOVE BAR SYSTEM',
+      businessName: 'Grow producciones - BAR SYSTEM',
       businessAddress: 'Av. Principal 123, Ciudad',
       businessPhone: '+1 (555) 123-4567',
       businessEmail: 'info@groovebar.com',
@@ -158,7 +158,7 @@ export class BusinessConfigService {
       currency: 'ARS',
       taxRate: 10,
       thankYouMessage: '¡Gracias por su compra!',
-      receiptFooter: 'Sistema de Barras Groove'
+      receiptFooter: 'Sistema de Barras Fest-Go'
     });
 
     // Guardar configuración por defecto de forma asíncrona
@@ -172,7 +172,7 @@ export class BusinessConfigService {
 
   private getDefaultConfig(): IBusinessConfig {
     return new BusinessConfigModel({
-      businessName: 'GROOVE BAR SYSTEM',
+      businessName: 'Grow producciones - BAR SYSTEM',
       businessAddress: 'Av. Principal 123, Ciudad',
       businessPhone: '+1 (555) 123-4567',
       businessEmail: 'info@groovebar.com',
@@ -181,7 +181,7 @@ export class BusinessConfigService {
       currency: 'ARS',
       taxRate: 10,
       thankYouMessage: '¡Gracias por su compra!',
-      receiptFooter: 'Sistema de Barras Groove'
+      receiptFooter: 'Sistema de Barras Fest-Go'
     });
   }
 }

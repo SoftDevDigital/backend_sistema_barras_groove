@@ -73,7 +73,7 @@ export class BusinessConfigModel extends BaseModel implements IBusinessConfig {
       this.currency = data.currency || 'ARS';
       this.taxRate = data.taxRate || 10;
       this.thankYouMessage = data.thankYouMessage || '¡Gracias por su compra!';
-      this.receiptFooter = data.receiptFooter || 'Sistema de Barras Groove';
+      this.receiptFooter = data.receiptFooter || 'Sistema de Barras Fest-Go';
       this.printerSettings = {
         paperWidth: data.printerSettings?.paperWidth || 80,
         fontSize: data.printerSettings?.fontSize || 12,
@@ -90,7 +90,7 @@ export class BusinessConfigModel extends BaseModel implements IBusinessConfig {
       this.currency = 'ARS';
       this.taxRate = 10;
       this.thankYouMessage = '¡Gracias por su compra!';
-      this.receiptFooter = 'Sistema de Barras Groove';
+      this.receiptFooter = 'Sistema de Barras Fest-Go';
       this.printerSettings = {
         paperWidth: 80,
         fontSize: 12,
