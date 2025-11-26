@@ -85,6 +85,13 @@ export class BarController {
         revenue: number;
         percentage: number;
       }>;
+      administrator: Array<{
+        productId: string;
+        productName: string;
+        quantitySold: number;
+        revenue: number;
+        percentage: number;
+      }>;
     };
     salesByUser: Array<{
       userId: string;
@@ -96,6 +103,7 @@ export class BarController {
       cash: number;
       card: number;
       mixed: number;
+      administrator: number;
     };
     hourlyDistribution: Array<{
       hour: string;
