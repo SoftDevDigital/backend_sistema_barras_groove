@@ -351,6 +351,13 @@ export class BarService {
         revenue: number;
         percentage: number;
       }>;
+      dj: Array<{
+        productId: string;
+        productName: string;
+        quantitySold: number;
+        revenue: number;
+        percentage: number;
+      }>;
     };
     salesByUser: Array<{
       userId: string;
@@ -363,6 +370,7 @@ export class BarService {
       card: number;
       mixed: number;
       administrator: number;
+      dj: number;
     };
     hourlyDistribution: Array<{
       hour: string;
@@ -437,7 +445,7 @@ export class BarService {
       })).sort((a, b) => b.revenue - a.revenue);
 
       // Productos vendidos por método de pago
-      const calculateProductsByPaymentMethod = (paymentMethod: 'cash' | 'card' | 'mixed' | 'administrator') => {
+      const calculateProductsByPaymentMethod = (paymentMethod: 'cash' | 'card' | 'mixed' | 'administrator' | 'dj') => {
         const filteredTickets = ticketsWithItems.filter(t => t.paymentMethod === paymentMethod);
         const methodRevenue = filteredTickets.reduce((sum, t) => sum + (t.total || 0), 0);
         const productsMapByMethod = new Map<string, { name: string; quantity: number; revenue: number }>();
@@ -468,7 +476,8 @@ export class BarService {
         cash: calculateProductsByPaymentMethod('cash'),
         card: calculateProductsByPaymentMethod('card'),
         mixed: calculateProductsByPaymentMethod('mixed'),
-        administrator: calculateProductsByPaymentMethod('administrator')
+        administrator: calculateProductsByPaymentMethod('administrator'),
+        dj: calculateProductsByPaymentMethod('dj')
       };
 
       // Ventas por usuario (bartender)
@@ -493,7 +502,8 @@ export class BarService {
         cash: ticketsWithItems.filter(t => t.paymentMethod === 'cash').reduce((sum, t) => sum + t.total, 0),
         card: ticketsWithItems.filter(t => t.paymentMethod === 'card').reduce((sum, t) => sum + t.total, 0),
         mixed: ticketsWithItems.filter(t => t.paymentMethod === 'mixed').reduce((sum, t) => sum + t.total, 0),
-        administrator: ticketsWithItems.filter(t => t.paymentMethod === 'administrator').reduce((sum, t) => sum + t.total, 0)
+        administrator: ticketsWithItems.filter(t => t.paymentMethod === 'administrator').reduce((sum, t) => sum + t.total, 0),
+        dj: ticketsWithItems.filter(t => t.paymentMethod === 'dj').reduce((sum, t) => sum + t.total, 0)
       };
 
       // Distribución por hora

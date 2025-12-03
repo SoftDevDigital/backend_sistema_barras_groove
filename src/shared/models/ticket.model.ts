@@ -85,7 +85,7 @@ export class TicketModel extends BaseModel implements ITicket {
   eventId: string;
   eventName: string;
   status: 'open' | 'paid' | 'cancelled' | 'refunded';
-  paymentMethod?: 'cash' | 'card' | 'mixed' | 'administrator';
+  paymentMethod?: 'cash' | 'card' | 'mixed' | 'administrator' | 'dj';
   subtotal: number;
   totalTax: number;
   total: number;
@@ -212,7 +212,7 @@ export class TicketModel extends BaseModel implements ITicket {
   }
 
   // Procesar pago
-  processPayment(paymentMethod: 'cash' | 'card' | 'mixed' | 'administrator', paidAmount: number): void {
+  processPayment(paymentMethod: 'cash' | 'card' | 'mixed' | 'administrator' | 'dj', paidAmount: number): void {
     this.paymentMethod = paymentMethod;
     this.paidAmount = paidAmount;
     this.changeAmount = paymentMethod === 'cash' ? Math.max(0, paidAmount - this.total) : 0;

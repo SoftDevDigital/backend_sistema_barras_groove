@@ -33,7 +33,7 @@ export interface ITicket {
   eventId: string;
   eventName: string;
   status: 'open' | 'paid' | 'cancelled' | 'refunded';
-  paymentMethod?: 'cash' | 'card' | 'mixed' | 'administrator';
+  paymentMethod?: 'cash' | 'card' | 'mixed' | 'administrator' | 'dj';
   subtotal: number;
   totalTax: number;
   total: number;
@@ -57,7 +57,7 @@ export interface ITicketUpdate {
 }
 
 export interface ITicketPayment {
-  paymentMethod: 'cash' | 'card' | 'mixed' | 'administrator';
+  paymentMethod: 'cash' | 'card' | 'mixed' | 'administrator' | 'dj';
   paidAmount: number;
   changeAmount?: number;
 }
@@ -67,7 +67,7 @@ export interface ITicketQuery {
   barId?: string;
   eventId?: string;
   status?: 'open' | 'paid' | 'cancelled' | 'refunded';
-  paymentMethod?: 'cash' | 'card' | 'mixed' | 'administrator';
+  paymentMethod?: 'cash' | 'card' | 'mixed' | 'administrator' | 'dj';
   dateFrom?: string;
   dateTo?: string;
   printed?: boolean;

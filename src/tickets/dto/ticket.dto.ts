@@ -29,9 +29,9 @@ export class CreateTicketDto {
   @IsOptional()
   customerName?: string;
 
-  @IsEnum(['cash', 'card', 'mixed', 'administrator'])
+  @IsEnum(['cash', 'card', 'mixed', 'administrator', 'dj'])
   @IsOptional()
-  paymentMethod?: 'cash' | 'card' | 'mixed' | 'administrator';
+  paymentMethod?: 'cash' | 'card' | 'mixed' | 'administrator' | 'dj';
 
   @IsString()
   @IsOptional()
@@ -67,9 +67,9 @@ export class UpdateTicketItemDto {
 }
 
 export class ProcessPaymentDto {
-  @IsEnum(['cash', 'card', 'mixed', 'administrator'])
+  @IsEnum(['cash', 'card', 'mixed', 'administrator', 'dj'])
   @IsNotEmpty()
-  paymentMethod: 'cash' | 'card' | 'mixed' | 'administrator';
+  paymentMethod: 'cash' | 'card' | 'mixed' | 'administrator' | 'dj';
 
   @IsNumber()
   @Min(0.01)
@@ -98,9 +98,9 @@ export class TicketQueryDto {
   @IsOptional()
   status?: 'open' | 'paid' | 'cancelled' | 'refunded';
 
-  @IsEnum(['cash', 'card', 'mixed', 'administrator'])
+  @IsEnum(['cash', 'card', 'mixed', 'administrator', 'dj'])
   @IsOptional()
-  paymentMethod?: 'cash' | 'card' | 'mixed' | 'administrator';
+  paymentMethod?: 'cash' | 'card' | 'mixed' | 'administrator' | 'dj';
 
   @IsDateString()
   @IsOptional()

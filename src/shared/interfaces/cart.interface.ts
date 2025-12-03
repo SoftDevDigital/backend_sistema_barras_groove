@@ -48,7 +48,7 @@ export interface IConfirmCartRequest {
   barId: string; // ID de la barra donde se realiza la venta
   customerName?: string;
   customerEmail?: string;
-  paymentMethod?: 'cash' | 'card' | 'mixed' | 'administrator';
+  paymentMethod?: 'cash' | 'card' | 'mixed' | 'administrator' | 'dj';
   notes?: string;
 }
 

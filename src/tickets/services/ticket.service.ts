@@ -985,6 +985,7 @@ export class TicketService {
       case 'card': return 'TARJETA';
       case 'mixed': return 'MIXTO';
       case 'administrator': return 'ADMINISTRADOR';
+      case 'dj': return 'DJ';
       default: return 'PENDIENTE';
     }
   }
