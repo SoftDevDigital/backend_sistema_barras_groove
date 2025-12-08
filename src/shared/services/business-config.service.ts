@@ -149,7 +149,7 @@ export class BusinessConfigService {
     this.logger.log('Creating default business configuration', 'BusinessConfigService.createDefaultConfig');
     
     const defaultConfig = new BusinessConfigModel({
-      businessName: 'Grow producciones - BAR SYSTEM',
+      businessName: 'Groove - BAR SYSTEM',
       businessAddress: 'Av. Principal 123, Ciudad',
       businessPhone: '+1 (555) 123-4567',
       businessEmail: 'info@groovebar.com',
@@ -172,7 +172,7 @@ export class BusinessConfigService {
 
   private getDefaultConfig(): IBusinessConfig {
     return new BusinessConfigModel({
-      businessName: 'Grow producciones - BAR SYSTEM',
+      businessName: 'Groove - BAR SYSTEM',
       businessAddress: 'Av. Principal 123, Ciudad',
       businessPhone: '+1 (555) 123-4567',
       businessEmail: 'info@groovebar.com',

@@ -28,7 +28,7 @@ async function initializeBusinessConfig() {
 
     // Crear configuración por defecto
     const defaultConfig = new BusinessConfigModel({
-      businessName: 'Grow producciones - BAR SYSTEM',
+      businessName: 'Groove - BAR SYSTEM',
       businessAddress: 'Av. Principal 123, Ciudad',
       businessPhone: '+1 (555) 123-4567',
       businessEmail: 'info@groovebar.com',
