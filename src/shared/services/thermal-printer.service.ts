@@ -120,7 +120,7 @@ export class ThermalPrinterService {
       printer.bold(true);
       printer.setTextDoubleHeight();
       printer.setTextDoubleWidth();
-      printer.println('GROOVE BAR');
+      printer.println('Despedida de año G&G');
       printer.setTextNormal();
       printer.bold(false);
       printer.println('--- TICKET DE VENTA ---');
@@ -202,7 +202,7 @@ export class ThermalPrinterService {
       printer.bold(true);
       printer.setTextDoubleHeight();
       printer.setTextDoubleWidth();
-      printer.println('GROOVE BAR');
+      printer.println('Despedida de año G&G');
       printer.setTextNormal();
       printer.bold(false);
       printer.println('--- Test Page ---');

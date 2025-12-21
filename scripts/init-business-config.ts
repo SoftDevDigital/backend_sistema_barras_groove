@@ -28,7 +28,7 @@ async function initializeBusinessConfig() {
 
     // Crear configuración por defecto
     const defaultConfig = new BusinessConfigModel({
-      businessName: 'Groove - BAR SYSTEM',
+      businessName: 'Despedida de año G&G',
       businessAddress: 'Av. Principal 123, Ciudad',
       businessPhone: '+1 (555) 123-4567',
       businessEmail: 'info@groovebar.com',
