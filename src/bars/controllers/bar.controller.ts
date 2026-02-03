@@ -78,7 +78,7 @@ export class BarController {
         revenue: number;
         percentage: number;
       }>;
-      mixed: Array<{
+      transfer: Array<{
         productId: string;
         productName: string;
         quantitySold: number;
@@ -109,7 +109,7 @@ export class BarController {
     salesByPaymentMethod: {
       cash: number;
       card: number;
-      mixed: number;
+      transfer: number;
       administrator: number;
       dj: number;
     };

@@ -337,7 +337,7 @@ export class BarService {
         revenue: number;
         percentage: number;
       }>;
-      mixed: Array<{
+      transfer: Array<{
         productId: string;
         productName: string;
         quantitySold: number;
@@ -368,7 +368,7 @@ export class BarService {
     salesByPaymentMethod: {
       cash: number;
       card: number;
-      mixed: number;
+      transfer: number;
       administrator: number;
       dj: number;
     };
@@ -445,7 +445,7 @@ export class BarService {
       })).sort((a, b) => b.revenue - a.revenue);
 
       // Productos vendidos por método de pago
-      const calculateProductsByPaymentMethod = (paymentMethod: 'cash' | 'card' | 'mixed' | 'administrator' | 'dj') => {
+      const calculateProductsByPaymentMethod = (paymentMethod: 'cash' | 'card' | 'transfer' | 'administrator' | 'dj') => {
         const filteredTickets = ticketsWithItems.filter(t => t.paymentMethod === paymentMethod);
         const methodRevenue = filteredTickets.reduce((sum, t) => sum + (t.total || 0), 0);
         const productsMapByMethod = new Map<string, { name: string; quantity: number; revenue: number }>();
@@ -475,7 +475,7 @@ export class BarService {
       const productsSoldByPaymentMethod = {
         cash: calculateProductsByPaymentMethod('cash'),
         card: calculateProductsByPaymentMethod('card'),
-        mixed: calculateProductsByPaymentMethod('mixed'),
+        transfer: calculateProductsByPaymentMethod('transfer'),
         administrator: calculateProductsByPaymentMethod('administrator'),
         dj: calculateProductsByPaymentMethod('dj')
       };
@@ -501,7 +501,7 @@ export class BarService {
       const salesByPaymentMethod = {
         cash: ticketsWithItems.filter(t => t.paymentMethod === 'cash').reduce((sum, t) => sum + t.total, 0),
         card: ticketsWithItems.filter(t => t.paymentMethod === 'card').reduce((sum, t) => sum + t.total, 0),
-        mixed: ticketsWithItems.filter(t => t.paymentMethod === 'mixed').reduce((sum, t) => sum + t.total, 0),
+        transfer: ticketsWithItems.filter(t => t.paymentMethod === 'transfer').reduce((sum, t) => sum + t.total, 0),
         administrator: ticketsWithItems.filter(t => t.paymentMethod === 'administrator').reduce((sum, t) => sum + t.total, 0),
         dj: ticketsWithItems.filter(t => t.paymentMethod === 'dj').reduce((sum, t) => sum + t.total, 0)
       };

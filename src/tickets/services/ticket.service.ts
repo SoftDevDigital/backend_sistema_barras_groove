@@ -983,7 +983,7 @@ export class TicketService {
     switch (method) {
       case 'cash': return 'EFECTIVO';
       case 'card': return 'TARJETA';
-      case 'mixed': return 'MIXTO';
+      case 'transfer': return 'TRANSFERENCIA';
       case 'administrator': return 'ADMINISTRADOR';
       case 'dj': return 'DJ';
       default: return 'PENDIENTE';
