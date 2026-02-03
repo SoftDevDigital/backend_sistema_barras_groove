@@ -119,6 +119,13 @@ export class TicketService {
           ticketModel.paymentMethod = createTicketDto.paymentMethod;
         }
         
+        // Si viene del carrito con método de pago = venta facturada: marcar como pagado para que cuente en dashboard/recuentos
+        if (createTicketDto.items?.length && createTicketDto.paymentMethod) {
+          ticketModel.status = 'paid';
+          ticketModel.paidAmount = ticketModel.total;
+          ticketModel.changeAmount = 0;
+        }
+        
         await this.dynamoDBService.put(TABLE_NAMES.TICKETS, ticketModel.toDynamoDBItem());
       }
 
@@ -143,9 +150,9 @@ export class TicketService {
           createdAt: ticketModel.createdAt,
           updatedAt: ticketModel.updatedAt,
           customerName: 'Cliente General',
-          paymentMethod: 'cash',
-          paidAmount: 0,
-          changeAmount: 0,
+          paymentMethod: ticketModel.paymentMethod || 'cash',
+          paidAmount: ticketModel.paidAmount ?? ticketModel.total,
+          changeAmount: ticketModel.changeAmount ?? 0,
         } as ITicket, ticketModel.barId);
 
         if (printSuccess) {
