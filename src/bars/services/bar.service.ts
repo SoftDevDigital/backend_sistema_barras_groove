@@ -382,25 +382,25 @@ export class BarService {
       // Obtener información de la barra
       const bar = await this.findOne(barId);
 
-      // Obtener todos los tickets de esta barra
+      // Obtener TODOS los tickets de esta barra (paginación completa para que el admin vea todo lo vendido)
       let ticketItems = [];
       try {
-        // Intentar usar GSI2 primero
         ticketItems = await this.dynamoDBService.query(
           TABLE_NAMES.TICKETS,
           'GSI2PK = :gsi2pk',
           { ':gsi2pk': `BAR#${barId}` },
           undefined,
-          'GSI2'
+          'GSI2',
+          100
         );
       } catch (error) {
-        // Fallback: usar scan y filtrar por barId
+        // Fallback: scan con paginación para traer TODOS los tickets y filtrar por barId
         console.warn('GSI2 not available for tickets, using scan fallback');
-        const allTickets = await this.dynamoDBService.scan(TABLE_NAMES.TICKETS);
+        const allTickets = await this.dynamoDBService.scan(TABLE_NAMES.TICKETS, undefined, undefined, undefined, undefined, 100);
         ticketItems = allTickets.filter(t => t.barId === barId);
       }
 
-      // Cargar items de cada ticket
+      // Cargar items de cada ticket (con paginación para no perder ningún ítem)
       const ticketsWithItems: ITicket[] = [];
       for (const ticketItem of ticketItems) {
         const items = await this.dynamoDBService.query(
@@ -409,7 +409,10 @@ export class BarService {
           {
             ':pk': `TICKET#${ticketItem.id}`,
             ':sk': 'ITEM#'
-          }
+          },
+          undefined,
+          undefined,
+          100
         );
         
         ticketsWithItems.push({

@@ -105,28 +105,40 @@ export class DynamoDBService {
     keyConditionExpression: string,
     expressionAttributeValues: Record<string, any>,
     expressionAttributeNames?: Record<string, string>,
-    indexName?: string
+    indexName?: string,
+    limitPerPage?: number
   ): Promise<Record<string, any>[]> {
     try {
-      const command = new QueryCommand({
-        TableName: tableName,
-        IndexName: indexName,
-        KeyConditionExpression: keyConditionExpression,
-        ExpressionAttributeValues: expressionAttributeValues,
-        ExpressionAttributeNames: expressionAttributeNames,
-      });
+      const allItems: Record<string, any>[] = [];
+      let lastKey: Record<string, any> | undefined;
 
-      const result = await this.client.send(command);
-      return result.Items || [];
+      do {
+        const command = new QueryCommand({
+          TableName: tableName,
+          IndexName: indexName,
+          KeyConditionExpression: keyConditionExpression,
+          ExpressionAttributeValues: expressionAttributeValues,
+          ExpressionAttributeNames: expressionAttributeNames,
+          ExclusiveStartKey: lastKey,
+          ...(limitPerPage != null && { Limit: limitPerPage }),
+        });
+
+        const result = await this.client.send(command);
+        const items = result.Items || [];
+        allItems.push(...items);
+        lastKey = result.LastEvaluatedKey;
+      } while (lastKey);
+
+      return allItems;
     } catch (error) {
       console.error(`DynamoDB QUERY error for table ${tableName}:`, error.message);
-      
+
       // Si es error de conexión, retornar array vacío para mantener la app funcionando
       if (error.name === 'NetworkingError' || error.name === 'TimeoutError') {
         console.warn(`DynamoDB connection issue for table ${tableName}, returning empty array`);
         return [];
       }
-      
+
       throw error;
     }
   }
@@ -136,28 +148,40 @@ export class DynamoDBService {
     filterExpression?: string,
     expressionAttributeValues?: Record<string, any>,
     expressionAttributeNames?: Record<string, string>,
-    indexName?: string
+    indexName?: string,
+    limitPerPage?: number
   ): Promise<Record<string, any>[]> {
     try {
-      const command = new ScanCommand({
-        TableName: tableName,
-        IndexName: indexName,
-        FilterExpression: filterExpression,
-        ExpressionAttributeValues: expressionAttributeValues,
-        ExpressionAttributeNames: expressionAttributeNames,
-      });
+      const allItems: Record<string, any>[] = [];
+      let lastKey: Record<string, any> | undefined;
 
-      const result = await this.client.send(command);
-      return result.Items || [];
+      do {
+        const command = new ScanCommand({
+          TableName: tableName,
+          IndexName: indexName,
+          FilterExpression: filterExpression,
+          ExpressionAttributeValues: expressionAttributeValues,
+          ExpressionAttributeNames: expressionAttributeNames,
+          ExclusiveStartKey: lastKey,
+          ...(limitPerPage != null && { Limit: limitPerPage }),
+        });
+
+        const result = await this.client.send(command);
+        const items = result.Items || [];
+        allItems.push(...items);
+        lastKey = result.LastEvaluatedKey;
+      } while (lastKey);
+
+      return allItems;
     } catch (error) {
       console.error(`DynamoDB SCAN error for table ${tableName}:`, error.message);
-      
+
       // Si es error de conexión, retornar array vacío para mantener la app funcionando
       if (error.name === 'NetworkingError' || error.name === 'TimeoutError') {
         console.warn(`DynamoDB connection issue for table ${tableName}, returning empty array`);
         return [];
       }
-      
+
       throw error;
     }
   }

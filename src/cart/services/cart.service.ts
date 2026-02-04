@@ -29,30 +29,39 @@ export class CartService {
 
   // Procesar entrada del bartender (ej: "CCC2", "FER1")
   async processBartenderInput(
-    input: string, 
-    userId: string, 
-    userName: string, 
+    input: string,
+    userId: string,
+    userName: string,
     eventId: string
   ): Promise<IBartenderInputResponse> {
     this.logger.log(`Processing bartender input: ${input}`, 'CartService.processBartenderInput');
 
     try {
+      // Punto 2: eventId requerido
+      if (!eventId || typeof eventId !== 'string' || !eventId.trim()) {
+        throw new BadRequestException('eventId es requerido. Obtenga un evento activo con GET /events/active.');
+      }
+
       // Parsear el input (ej: "CCC2" -> code: "CCC", quantity: 2)
       const { code, quantity } = this.parseInput(input);
-      
+
       if (!code || !quantity) {
-        throw new BadRequestException('Formato inválido. Use: CODIGO+CANTIDAD (ej: CCC2, FER1)');
+        throw new BadRequestException('Formato inválido. Use: CODIGO+CANTIDAD (ej: CCC2, FER1, ft1)');
       }
 
-      // Buscar producto por código
+      // Buscar producto por código (punto 5: no encontrado o inactivo)
       const product = await this.findProductByCode(code);
       if (!product) {
-        throw new NotFoundException(`Producto con código ${code} no encontrado`);
+        throw new NotFoundException(
+          `Producto con código "${code}" no encontrado o no disponible. Revise que exista y esté activo.`
+        );
       }
 
-      // Verificar stock
+      // Punto 4: verificar stock
       if (product.stock < quantity) {
-        throw new BadRequestException(`Stock insuficiente. Disponible: ${product.stock}, Solicitado: ${quantity}`);
+        throw new BadRequestException(
+          `Stock insuficiente para ${product.name}. Disponible: ${product.stock}, solicitado: ${quantity}`
+        );
       }
 
       // Agregar al carrito
@@ -83,16 +92,11 @@ export class CartService {
 
     } catch (error) {
       this.logger.error(`Error processing bartender input:`, error.stack, 'CartService.processBartenderInput');
-      
-      // Obtener el carrito actual para devolverlo aunque haya error
-      const cartSummary = await this.getCartSummary(userId);
-      
-      return {
-        success: false,
-        message: error.message || 'Error procesando entrada',
-        error: error.message,
-        cartSummary // Siempre devolver el carrito, aunque esté vacío
-      };
+      // Re-lanzar errores de validación para que el frontend reciba 400/404
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new BadRequestException(error.message || 'Error procesando entrada');
     }
   }
 
@@ -262,37 +266,58 @@ export class CartService {
     };
   }
 
+  private static readonly PAYMENT_METHODS = ['cash', 'card', 'transfer', 'administrator', 'dj'] as const;
+
   // Confirmar carrito y generar ticket
   async confirmCart(
-    userId: string, 
+    userId: string,
     request: IConfirmCartRequest
   ): Promise<IConfirmCartResponse> {
     this.logger.log(`Confirming cart for user: ${userId}`, 'CartService.confirmCart');
 
     try {
-      // Validar barId
-      if (!request.barId) {
-        throw new BadRequestException('Bar ID is required to confirm cart');
+      // Punto 3: barId requerido
+      if (!request.barId || typeof request.barId !== 'string' || !request.barId.trim()) {
+        throw new BadRequestException(
+          'barId es requerido para facturar. Indique la barra donde se realiza la venta (ej. Barra 5).'
+        );
       }
 
+      // Punto 1: paymentMethod requerido y válido
+      if (!request.paymentMethod || typeof request.paymentMethod !== 'string') {
+        throw new BadRequestException(
+          'paymentMethod es requerido. Valores permitidos: cash, card, transfer, administrator, dj'
+        );
+      }
+      const method = request.paymentMethod.toLowerCase();
+      if (!CartService.PAYMENT_METHODS.includes(method as any)) {
+        throw new BadRequestException(
+          `paymentMethod inválido: "${request.paymentMethod}". Use: cash, card, transfer, administrator, dj`
+        );
+      }
+
+      // Punto 6: carrito no vacío
       const cart = this.activeCarts.get(userId);
-      
       if (!cart || cart.items.length === 0) {
-        throw new BadRequestException('Carrito vacío');
+        throw new BadRequestException(
+          'No se puede facturar: el carrito está vacío. Agregue productos antes de confirmar.'
+        );
       }
 
-      // Verificar stock nuevamente antes de confirmar
+      // Punto 4: verificar stock nuevamente antes de confirmar
       for (const item of cart.items) {
         const product = await this.productService.findOne(item.productId);
         if (product.stock < item.quantity) {
-          throw new BadRequestException(`Stock insuficiente para ${product.name}. Disponible: ${product.stock}, Solicitado: ${item.quantity}`);
+          throw new BadRequestException(
+            `Stock insuficiente para ${product.name}. Disponible: ${product.stock}, solicitado: ${item.quantity}`
+          );
         }
       }
 
-      // Crear ticket
+      // Crear ticket (barId se valida dentro de ticketService.create)
       const ticketData = {
         eventId: cart.eventId,
-        barId: request.barId, // Usar el barId proporcionado en el request
+        barId: request.barId.trim(),
         userId: cart.userId,
         customerName: request.customerName || 'Cliente',
         items: cart.items.map(item => ({
@@ -305,7 +330,7 @@ export class CartService {
         subtotal: cart.subtotal,
         tax: cart.tax,
         total: cart.total,
-        paymentMethod: request.paymentMethod || 'cash',
+        paymentMethod: method as typeof CartService.PAYMENT_METHODS[number],
         notes: request.notes
       };
 
@@ -334,16 +359,15 @@ export class CartService {
         success: true,
         ticketId: ticket.id,
         message: 'Ticket generado, impreso y stock actualizado correctamente',
-        printFormat: printFormat // Formato listo para imprimir
+        printFormat: printFormat
       };
-
     } catch (error) {
       this.logger.error(`Error confirming cart:`, error.stack, 'CartService.confirmCart');
-      return {
-        success: false,
-        message: 'Error confirmando carrito',
-        error: error.message
-      };
+      // Re-lanzar errores de validación para que el frontend reciba 400/404
+      if (error instanceof BadRequestException || error instanceof NotFoundException) {
+        throw error;
+      }
+      throw new BadRequestException(error.message || 'Error confirmando carrito');
     }
   }
 

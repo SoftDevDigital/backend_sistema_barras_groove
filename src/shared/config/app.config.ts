@@ -26,7 +26,7 @@ export const appConfig = {
   // JWT
   jwt: {
     secret: getEnvVar('JWT_SECRET', 'super-secret-jwt-key-for-bar-system-2024-production-ready'),
-    expiresIn: getEnvVar('JWT_EXPIRES_IN', '24h'),
+    expiresIn: getEnvVar('JWT_EXPIRES_IN', '7d'),
   },
   
   // AWS

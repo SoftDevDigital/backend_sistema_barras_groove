@@ -219,13 +219,16 @@ export class TicketService {
       let items: Record<string, any>[] = [];
 
       // Construir query según los filtros con logging
+      // Paginación completa para que el admin vea TODOS los tickets (sin pérdida por límite de página)
       if (query.userId) {
         this.logger.debug(`Searching tickets for user ${query.userId}`, 'TicketService.findAll');
         items = await this.dynamoDBService.query(
           TABLE_NAMES.TICKETS,
           'GSI1PK = :gsi1pk',
-          { ':gsi1pk': `USER#${query.userId}` }, // Cambiado de EMPLOYEE a USER
-          { 'GSI1': 'GSI1PK, GSI1SK' }
+          { ':gsi1pk': `USER#${query.userId}` },
+          undefined,
+          'GSI1',
+          100
         );
       } else if (query.barId) {
         this.logger.debug(`Searching tickets for bar ${query.barId}`, 'TicketService.findAll');
@@ -233,7 +236,9 @@ export class TicketService {
           TABLE_NAMES.TICKETS,
           'GSI2PK = :gsi2pk',
           { ':gsi2pk': `BAR#${query.barId}` },
-          { 'GSI2': 'GSI2PK, GSI2SK' }
+          undefined,
+          'GSI2',
+          100
         );
       } else if (query.eventId) {
         this.logger.debug(`Searching tickets for event ${query.eventId}`, 'TicketService.findAll');
@@ -241,11 +246,13 @@ export class TicketService {
           TABLE_NAMES.TICKETS,
           'GSI3PK = :gsi3pk',
           { ':gsi3pk': `EVENT#${query.eventId}` },
-          { 'GSI3': 'GSI3PK, GSI3SK' }
+          undefined,
+          'GSI3',
+          100
         );
       } else {
         this.logger.debug('Searching all tickets', 'TicketService.findAll');
-        items = await this.dynamoDBService.scan(TABLE_NAMES.TICKETS);
+        items = await this.dynamoDBService.scan(TABLE_NAMES.TICKETS, undefined, undefined, undefined, undefined, 100);
       }
 
       this.logger.debug(`Found ${items.length} tickets before filtering`, 'TicketService.findAll');
@@ -786,7 +793,10 @@ export class TicketService {
       const items = await this.dynamoDBService.query(
         TABLE_NAMES.TICKET_ITEMS,
         'PK = :pk',
-        { ':pk': `TICKET#${ticketId}` }
+        { ':pk': `TICKET#${ticketId}` },
+        undefined,
+        undefined,
+        100
       );
 
       return items.map(item => ({
